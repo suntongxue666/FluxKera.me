@@ -178,8 +178,8 @@ export default function HomePage() {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative text-white overflow-hidden">
-          <div className="absolute inset-0 bg-[url('/banner.jpg')] bg-cover bg-center bg-fixed"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/30"></div>
+        <div className="absolute inset-0 bg-[url('/banner.jpg')] bg-cover bg-center bg-fixed"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/30"></div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 md:py-40 lg:py-48">
           <div className="max-w-3xl">
@@ -208,10 +208,6 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </section>
-    </div>
-  )
-}
         
         {/* Modern Wave Divider */}
         <div className="absolute bottom-0 left-0 right-0">
@@ -288,39 +284,6 @@ export default function HomePage() {
               <p className="text-gray-600">
                 Simple interface designed for everyone. Just enter your prompt and watch the magic happen.
               </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-[40px] md:py-[80px] relative overflow-hidden">
-        {/* Background with gradient overlay */}
-        <div className="absolute inset-0 bg-[url('/banner.jpg')] bg-cover bg-center opacity-20"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-900 via-purple-900 to-indigo-900"></div>
-        
-        {/* Content */}
-        <div className="relative max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <div className="glass rounded-3xl p-12 backdrop-blur-md bg-white/10 border border-white/20 shadow-2xl">
-            <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white animate-fadeInUp">
-              Ready to Create Amazing Images?
-            </h2>
-            <p className="text-xl text-blue-100 mb-12 max-w-2xl mx-auto animate-fadeInUp" style={{animationDelay: "0.2s"}}>
-              Join thousands of creators who are already turning their ideas into reality with FluxKrea
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-6 animate-fadeInUp" style={{animationDelay: "0.4s"}}>
-              <Link 
-                href="/generate"
-                className="bg-white text-blue-700 hover:bg-blue-50 px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl inline-flex items-center justify-center shadow-lg"
-              >
-                Start Creating Now <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-              <Link 
-                href="/pricing"
-                className="bg-transparent border-2 border-white hover:bg-white/20 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-300 transform hover:-translate-y-1 inline-flex items-center justify-center"
-              >
-                View Pricing
-              </Link>
             </div>
           </div>
         </div>
@@ -509,142 +472,122 @@ export default function HomePage() {
       </section>
 
       {/* Pricing Preview */}
-      <section className="py-[40px] md:py-[80px] bg-gradient-to-b from-gray-50 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="inline-block px-4 py-1.5 bg-green-100 text-green-700 rounded-full text-sm font-medium mb-4">
-            Simple Pricing
-          </span>
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Start Free, Upgrade When You Need More
-          </h2>
-          <p className="text-xl text-gray-600 mb-16 max-w-2xl mx-auto">
-            Transparent pricing with no hidden fees. Pay only for what you need.
-          </p>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+      <section className="py-[40px] md:py-[80px] bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <span className="inline-block px-4 py-1.5 bg-green-100 text-green-700 rounded-full text-sm font-medium mb-4">
+              Simple Pricing
+            </span>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              Start Creating Today
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              No credit card required. Try FluxKrea for free.
+            </p>
+          </div>
+          
+          <div className="flex flex-col lg:flex-row gap-8 max-w-5xl mx-auto">
             {/* Free Plan */}
-            <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 shadow-lg transition-all hover:-translate-y-2 hover:shadow-xl">
-              <div className="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl font-bold text-blue-600">F</span>
+            <div className="flex-1 bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden transition-all hover:shadow-xl">
+              <div className="p-8">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Free</h3>
+                <div className="flex items-baseline mb-8">
+                  <span className="text-5xl font-bold text-gray-900">$0</span>
+                  <span className="text-gray-500 ml-2">/forever</span>
+                </div>
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                    <span>5 free generations daily</span>
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                    <span>Standard resolution</span>
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                    <span>Community support</span>
+                  </li>
+                </ul>
+                <Link 
+                  href="/generate"
+                  className="block w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 text-center rounded-lg font-medium transition-all"
+                >
+                  Start Creating
+                </Link>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Free</h3>
-              <div className="text-4xl font-bold text-gray-900 mb-2">$0</div>
-              <div className="text-blue-600 font-semibold mb-8">20 Credits</div>
-              <ul className="space-y-4 mb-8 text-left">
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600">20 credits upon signup</span>
-                </li>
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600">Basic image generation</span>
-                </li>
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600">Community support</span>
-                </li>
-              </ul>
-              <Link 
-                href="/pricing"
-                className="block w-full border-2 border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-all text-center"
-              >
-                Get Started
-              </Link>
             </div>
-
-            {/* Pro Plan */}
-            <div className="bg-gradient-to-b from-blue-50 to-white rounded-2xl border-2 border-blue-600 p-8 shadow-xl relative transition-all hover:-translate-y-2 hover:shadow-2xl -mt-4 pb-12">
-              <div className="absolute -top-5 inset-x-0 flex justify-center">
-                <span className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-full text-sm font-semibold shadow-lg">
-                  Most Popular
-                </span>
+            
+            {/* Premium Plan */}
+            <div className="flex-1 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl shadow-lg border border-blue-100 overflow-hidden relative transition-all hover:shadow-xl transform lg:scale-105">
+              <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-1 text-sm font-medium">
+                POPULAR
               </div>
-              <div className="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl font-bold text-white">P</span>
+              <div className="p-8">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">Premium</h3>
+                <div className="flex items-baseline mb-8">
+                  <span className="text-5xl font-bold text-gray-900">$9.99</span>
+                  <span className="text-gray-500 ml-2">/month</span>
+                </div>
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-center">
+                    <Check className="h-5 w-5 text-blue-500 mr-3 flex-shrink-0" />
+                    <span>Unlimited generations</span>
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-5 w-5 text-blue-500 mr-3 flex-shrink-0" />
+                    <span>High resolution outputs</span>
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-5 w-5 text-blue-500 mr-3 flex-shrink-0" />
+                    <span>Priority processing</span>
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-5 w-5 text-blue-500 mr-3 flex-shrink-0" />
+                    <span>Commercial usage rights</span>
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-5 w-5 text-blue-500 mr-3 flex-shrink-0" />
+                    <span>Premium support</span>
+                  </li>
+                </ul>
+                <Link 
+                  href="/pricing"
+                  className="block w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-center rounded-lg font-medium transition-all shadow-md"
+                >
+                  Get Premium
+                </Link>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Pro</h3>
-              <div className="text-4xl font-bold text-gray-900 mb-2">$9.99</div>
-              <div className="text-blue-600 font-semibold mb-8">1,000 Credits</div>
-              <ul className="space-y-4 mb-8 text-left">
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600">1,000 credits</span>
-                </li>
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600">Priority generation queue</span>
-                </li>
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600">High resolution support</span>
-                </li>
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600">Commercial license</span>
-                </li>
-              </ul>
-              <Link 
-                href="/pricing"
-                className="block w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all text-center"
-              >
-                Choose Pro
-              </Link>
-            </div>
-
-            {/* Max Plan */}
-            <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 shadow-lg transition-all hover:-translate-y-2 hover:shadow-xl">
-              <div className="bg-purple-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl font-bold text-purple-600">M</span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Max</h3>
-              <div className="text-4xl font-bold text-gray-900 mb-2">$29.99</div>
-              <div className="text-blue-600 font-semibold mb-8">5,000 Credits</div>
-              <ul className="space-y-4 mb-8 text-left">
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600">5,000 credits</span>
-                </li>
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600">Fastest generation speed</span>
-                </li>
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600">Maximum resolution</span>
-                </li>
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600">API access</span>
-                </li>
-              </ul>
-              <Link 
-                href="/pricing"
-                className="block w-full border-2 border-purple-600 text-purple-600 py-3 rounded-lg font-semibold hover:bg-purple-50 transition-all text-center"
-              >
-                Choose Max
-              </Link>
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Footer CTA */}
+      <section className="py-[40px] md:py-[80px] bg-gradient-to-b from-gray-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            Ready to Create Amazing Images?
+          </h2>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-10">
+            Join thousands of creators using FluxKrea to bring their ideas to life
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link 
+              href="/generate"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-all btn-3d inline-flex items-center justify-center shadow-lg"
+            >
+              Start Creating <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
+            <Link 
+              href="/gallery"
+              className="bg-white hover:bg-gray-50 text-gray-800 border border-gray-300 px-8 py-4 rounded-lg text-lg font-semibold transition-all btn-hover-lift inline-flex items-center justify-center shadow-md"
+            >
+              Browse Gallery
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
