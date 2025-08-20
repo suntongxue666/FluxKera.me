@@ -289,6 +289,39 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* CTA Section */}
+      <section className="py-[40px] md:py-[80px] relative overflow-hidden">
+        {/* Background with gradient overlay */}
+        <div className="absolute inset-0 bg-[url('/banner.jpg')] bg-cover bg-center opacity-20"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-900 via-purple-900 to-indigo-900"></div>
+        
+        {/* Content */}
+        <div className="relative max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <div className="glass rounded-3xl p-12 backdrop-blur-md bg-white/10 border border-white/20 shadow-2xl">
+            <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white animate-fadeInUp">
+              Ready to Create Amazing Images?
+            </h2>
+            <p className="text-xl text-blue-100 mb-12 max-w-2xl mx-auto animate-fadeInUp" style={{animationDelay: "0.2s"}}>
+              Join thousands of creators who are already turning their ideas into reality with FluxKrea
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-6 animate-fadeInUp" style={{animationDelay: "0.4s"}}>
+              <Link 
+                href="/generate"
+                className="bg-white text-blue-700 hover:bg-blue-50 px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl inline-flex items-center justify-center shadow-lg"
+              >
+                Start Creating Now <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+              <Link 
+                href="/pricing"
+                className="bg-transparent border-2 border-white hover:bg-white/20 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-300 transform hover:-translate-y-1 inline-flex items-center justify-center"
+              >
+                View Pricing
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Gallery Section */}
       <section className="py-[40px] md:py-[80px] bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -486,115 +519,6 @@ export default function HomePage() {
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {/* Free Plan */}
-            <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 shadow-lg transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
-              <div className="bg-gradient-to-br from-blue-100 to-blue-200 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
-                <span className="text-2xl font-bold text-blue-600">F</span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Free</h3>
-              <div className="text-4xl font-bold text-gray-900 mb-2">$0</div>
-              <div className="text-blue-600 font-semibold mb-8">20 Credits</div>
-              <ul className="space-y-4 mb-8 text-left">
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600">20 credits upon signup</span>
-                </li>
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600">Basic image generation</span>
-                </li>
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600">Community support</span>
-                </li>
-              </ul>
-              <Link 
-                href="/pricing"
-                className="block w-full border-2 border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-all text-center shadow-md hover:shadow-lg"
-              >
-                Get Started
-              </Link>
-            </div>
-
-            {/* Pro Plan */}
-            <div className="bg-gradient-to-b from-blue-50 to-white rounded-2xl border-2 border-blue-600 p-8 shadow-xl relative transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl -mt-4 pb-12">
-              <div className="absolute -top-5 inset-x-0 flex justify-center">
-                <span className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-full text-sm font-semibold shadow-lg">
-                  Most Popular
-                </span>
-              </div>
-              <div className="bg-gradient-to-br from-blue-500 to-blue-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
-                <span className="text-2xl font-bold text-white">P</span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Pro</h3>
-              <div className="text-4xl font-bold text-gray-900 mb-2">$9.99</div>
-              <div className="text-blue-600 font-semibold mb-8">1,000 Credits</div>
-              <ul className="space-y-4 mb-8 text-left">
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600">1,000 credits</span>
-                </li>
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600">Priority generation queue</span>
-                </li>
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600">High resolution support</span>
-                </li>
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600">Commercial license</span>
-                </li>
-              </ul>
-              <Link 
-                href="/pricing"
-                className="block w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all text-center"
-              >
-                Choose Pro
-              </Link>
-            </div>
-
-            {/* Max Plan */}
-            <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 shadow-lg transition-all duration-300 hover:-translate-y-2 hover:shadow-xl">
-              <div className="bg-gradient-to-br from-purple-100 to-purple-200 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
-                <span className="text-2xl font-bold text-purple-600">M</span>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Max</h3>
-              <div className="text-4xl font-bold text-gray-900 mb-2">$29.99</div>
-              <div className="text-blue-600 font-semibold mb-8">5,000 Credits</div>
-              <ul className="space-y-4 mb-8 text-left">
-                <li className="flex items-start">
-                  <div className="bg-green-100 rounded-full p-1 mr-3 flex-shrink-0">
-                    <Check className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-gray-600
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="inline-block px-4 py-1.5 bg-green-100 text-green-700 rounded-full text-sm font-medium mb-4">
-            Simple Pricing
-          </span>
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Start Free, Upgrade When You Need More
-          </h2>
-          <p className="text-xl text-gray-600 mb-16 max-w-2xl mx-auto">
-            Transparent pricing with no hidden fees. Pay only for what you need.
-          </p>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Free Plan */}
             <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 shadow-lg transition-all hover:-translate-y-2 hover:shadow-xl">
               <div className="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl font-bold text-blue-600">F</span>
@@ -720,40 +644,3 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-[40px] md:py-[80px] relative overflow-hidden">
-        {/* Background with gradient overlay */}
-        <div className="absolute inset-0 bg-[url('/banner.jpg')] bg-cover bg-center opacity-20"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-900 via-purple-900 to-indigo-900"></div>
-        
-        {/* Content */}
-        <div className="relative max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <div className="glass rounded-3xl p-12 backdrop-blur-md bg-white/10 border border-white/20 shadow-2xl">
-            <h2 className="text-4xl md:text-5xl font-bold mb-8 text-white animate-fadeInUp">
-              Ready to Create Amazing Images?
-            </h2>
-            <p className="text-xl text-blue-100 mb-12 max-w-2xl mx-auto animate-fadeInUp" style={{animationDelay: "0.2s"}}>
-              Join thousands of creators who are already turning their ideas into reality with FluxKrea
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-6 animate-fadeInUp" style={{animationDelay: "0.4s"}}>
-              <Link 
-                href="/generate"
-                className="bg-white text-blue-700 hover:bg-blue-50 px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl inline-flex items-center justify-center shadow-lg"
-              >
-                Start Creating Now <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-              <Link 
-                href="/pricing"
-                className="bg-transparent border-2 border-white hover:bg-white/20 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-300 transform hover:-translate-y-1 inline-flex items-center justify-center"
-              >
-                View Pricing
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-  )
-}
