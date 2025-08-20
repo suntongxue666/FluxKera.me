@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { Menu, X, Zap, User, LogOut, Coins } from 'lucide-react'
+import { Menu, X, Zap, UserIcon, LogOut, Coins } from 'lucide-react'
 import { signInWithGoogle, signOut, getCurrentUser, type User } from '@/lib/auth'
 
 export default function Header() {
@@ -10,21 +10,21 @@ export default function Header() {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Temporarily comment out useEffect for user loading to avoid auth errors
-  // useEffect(() => {
-  //   async function loadUser() {
-  //     try {
-  //       const currentUser = await getCurrentUser()
-  //       setUser(currentUser)
-  //     } catch (error) {
-  //       console.error('Error loading user:', error)
-  //     } finally {
-  //       setIsLoading(false)
-  //     }
-  //   }
+  // 加载用户信息
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const currentUser = await getCurrentUser()
+        setUser(currentUser)
+      } catch (error) {
+        console.error('Error loading user:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
     
-  //   loadUser()
-  // }, [])
+    loadUser()
+  }, [])
 
   const handleSignIn = async () => {
     try {
@@ -81,19 +81,28 @@ export default function Header() {
               <div className="w-24 h-10 bg-gray-100 animate-pulse rounded-lg"></div>
             ) : user ? (
               <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-indigo-50 px-3 py-1.5 rounded-full shadow-sm border border-blue-100">
-                  <Coins className="h-4 w-4 text-blue-600" />
-                  <span className="font-medium text-blue-700">{user.credits}</span>
+                <div className="flex items-center space-x-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                  </svg>
+                  <span className="font-medium">{user.credits}</span>
                 </div>
                 <div className="relative group">
-                  <button className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors bg-gray-50 hover:bg-gray-100 px-3 py-1.5 rounded-lg">
-                    <User className="h-5 w-5" />
-                    <span className="max-w-[100px] truncate">{user.email.split('@')[0]}</span>
-                  </button>
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-2 z-10 hidden group-hover:block border border-gray-100 transform transition-all duration-300 origin-top-right">
+                  <div className="flex items-center cursor-pointer">
+                    <img 
+                      src={`https://ui-avatars.com/api/?name=${user.email}&background=random`} 
+                      alt="User Avatar" 
+                      className="w-8 h-8"
+                    />
+                  </div>
+                  <div className="absolute right-0 mt-2 w-48 bg-black bg-opacity-80 backdrop-blur-sm rounded-lg shadow-xl py-2 z-10 hidden group-hover:block transform transition-all duration-300 origin-top-right">
+                    <div className="p-4 border-b border-gray-700">
+                      <p className="text-white font-medium truncate">{user.email}</p>
+                      <p className="text-gray-300 text-sm">Level: Free</p>
+                    </div>
                     <button 
                       onClick={handleSignOut}
-                      className="flex items-center w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
+                      className="flex items-center w-full px-4 py-2 text-left text-white hover:bg-white hover:bg-opacity-10 transition-colors"
                     >
                       <LogOut className="h-4 w-4 mr-2" />
                       Sign Out

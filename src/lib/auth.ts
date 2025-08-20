@@ -71,6 +71,10 @@ export async function getCurrentUser(): Promise<User | null> {
     
     if (error) {
       console.error('Error fetching user data:', error)
+      // 如果用户不存在，创建新用户
+      if (error.code === 'PGRST116') {
+        return createOrUpdateUser(user)
+      }
       return null
     }
     

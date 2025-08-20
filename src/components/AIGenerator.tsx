@@ -219,40 +219,6 @@ export default function AIGenerator() {
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-100 py-16 relative">
-      {/* 用户信息显示 - 移到右上角 */}
-      {user && (
-        <div className="absolute top-4 right-4 z-10">
-          <div className="relative group">
-            <div className="flex items-center bg-white rounded-full px-4 py-2 shadow-md cursor-pointer">
-              <div className="flex items-center mr-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
-                </svg>
-                <span className="font-medium">{credits}</span>
-              </div>
-              <img 
-                src={user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${user.email}&background=random`} 
-                alt="User Avatar" 
-                className="w-8 h-8 rounded-full"
-              />
-            </div>
-            
-            {/* 下拉菜单 */}
-            <div className="absolute right-0 mt-2 w-48 bg-black bg-opacity-80 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
-              <div className="p-4 border-b border-gray-700">
-                <p className="text-white font-medium truncate">{user.email}</p>
-                <p className="text-gray-300 text-sm">Level: Free</p>
-              </div>
-              <button 
-                onClick={handleSignOut}
-                className="w-full text-left px-4 py-2 text-white hover:bg-white hover:bg-opacity-10 transition-colors"
-              >
-                Sign out
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
@@ -351,7 +317,7 @@ export default function AIGenerator() {
               ) : (
                 <>
                   <Wand2 className="h-5 w-5 mr-2" />
-                  Generate      -10 Credits
+                  Generate <span className="text-xs ml-6">-10 Credits</span>
                 </>
               )}
             </button>
