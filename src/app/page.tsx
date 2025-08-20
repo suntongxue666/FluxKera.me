@@ -208,6 +208,10 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+      </section>
+    </div>
+  )
+}
         
         {/* Modern Wave Divider */}
         <div className="absolute bottom-0 left-0 right-0">
