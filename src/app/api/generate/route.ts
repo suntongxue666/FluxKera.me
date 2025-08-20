@@ -40,56 +40,56 @@ export async function POST(request: NextRequest) {
     // 标准化参数
     const normalizedParams = normalizeParams(params)
 
-    // 暂时注释掉用户认证和积分检查
-    // const cookieStore = cookies()
-    // const supabaseServer = createServerClient(
-    //   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    //   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    //   {
-    //     cookies: {
-    //       get(name: string) {
-    //         return cookieStore.get(name)?.value
-    //       },
-    //       set(name: string, value: string, options: any) {
-    //         cookieStore.set({ name, value, ...options })
-    //       },
-    //       remove(name: string, options: any) {
-    //         cookieStore.set({ name, value: '', ...options })
-    //       },
-    //     },
-    //   }
-    // )
+    // 用户认证和积分检查
+    const cookieStore = cookies()
+    const supabaseServer = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set({ name, value, ...options })
+          },
+          remove(name: string, options: any) {
+            cookieStore.set({ name, value: '', ...options })
+          },
+        },
+      }
+    )
     
-    // // 检查用户是否已登录
-    // const { data: { session } } = await supabaseServer.auth.getSession()
-    // if (!session) {
-    //   return NextResponse.json(
-    //     { success: false, error: 'Authentication required' },
-    //     { status: 401 }
-    //   )
-    // }
+    // 检查用户是否已登录
+    const { data: { session } } = await supabaseServer.auth.getSession()
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
     
-    // // 获取用户信息
-    // const { data: user, error: userError } = await supabaseServer
-    //   .from('users')
-    //   .select('*')
-    //   .eq('id', session.user.id)
-    //   .single()
+    // 获取用户信息
+    const { data: user, error: userError } = await supabaseServer
+      .from('users')
+      .select('*')
+      .eq('id', session.user.id)
+      .single()
       
-    // if (userError || !user) {
-    //   return NextResponse.json(
-    //     { success: false, error: 'User not found' },
-    //     { status: 404 }
-    //   )
-    // }
+    if (userError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      )
+    }
     
-    // // 检查用户积分
-    // if (user.credits < 10) {
-    //   return NextResponse.json(
-    //     { success: false, error: 'Insufficient credits' },
-    //     { status: 402 }
-    //   )
-    // }
+    // 检查用户积分
+    if (user.credits < 1) {
+      return NextResponse.json(
+        { success: false, error: 'Insufficient credits' },
+        { status: 402 }
+      )
+    }
 
     // 生成图片
     console.log('Starting image generation...')
@@ -112,53 +112,30 @@ export async function POST(request: NextRequest) {
     const generationTime = Date.now() - startTime
     console.log(`Image generated in ${generationTime}ms`)
 
-    // 暂时注释掉保存生成记录、扣除积分和记录积分交易的逻辑
-    // const { error: saveError } = await supabaseServer
-    //   .from('generations')
-    //   .insert({
-    //     user_id: user.id,
-    //     prompt: normalizedParams.prompt,
-    //     image_url: imageUrl,
-    //     credits_used: 10,
-    //     settings: {
-    //       width: normalizedParams.width,
-    //       height: normalizedParams.height,
-    //       guidance: normalizedParams.guidance,
-    //       num_steps: normalizedParams.num_steps,
-    //       seed: normalizedParams.seed,
-    //     }
-    //   })
+    // 保存生成记录
+    const { error: saveError } = await supabaseServer
+      .from('generations')
+      .insert({
+        user_id: user.id,
+        prompt: normalizedParams.prompt,
+        image_url: imageUrl,
+        credits_used: 1,
+        created_at: new Date().toISOString()
+      })
       
-    // if (saveError) {
-    //   console.error('Error saving generation record:', saveError)
-    // }
+    if (saveError) {
+      console.error('Error saving generation record:', saveError)
+    }
 
-    // // 扣除用户积分
-    // const { error: creditError } = await supabaseServer
-    //   .from('users')
-    //   .update({ 
-    //     credits: user.credits - 10,
-    //     updated_at: new Date().toISOString()
-    //   })
-    //   .eq('id', user.id)
-      
-    // if (creditError) {
-    //   console.error('Error updating user credits:', creditError)
-    // }
-
-    // // 记录积分交易
-    // const { error: transactionError } = await supabaseServer
-    //   .from('credit_transactions')
-    //   .insert({
-    //     user_id: user.id,
-    //     type: 'debit',
-    //     amount: -10,
-    //     description: `Image generation: "${normalizedParams.prompt.substring(0, 50)}${normalizedParams.prompt.length > 50 ? '...' : ''}"`
-    //   })
-      
-    // if (transactionError) {
-    //   console.error('Error recording credit transaction:', transactionError)
-    // }
+    // 使用存储过程扣除用户积分并记录交易
+    const { error: creditError } = await supabaseServer.rpc('decrement_user_credits', {
+      user_id_param: user.id,
+      amount: 1
+    })
+    
+    if (creditError) {
+      console.error('Error updating user credits:', creditError)
+    }
 
     return NextResponse.json({
       success: true,
@@ -166,7 +143,8 @@ export async function POST(request: NextRequest) {
       params: normalizedParams,
       generationTime: generationTime,
       estimatedTime: getEstimatedTime(normalizedParams.num_steps!),
-      creditsUsed: 10
+      creditsUsed: 1,
+      creditsRemaining: user.credits - 1
     })
 
   } catch (error: any) {

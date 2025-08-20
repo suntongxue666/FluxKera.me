@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Wand2, Settings, Loader2, Download, RefreshCw, AlertCircle } from 'lucide-react'
+import { Wand2, Settings, Loader2, Download, RefreshCw, AlertCircle, LogIn } from 'lucide-react'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+
 // Based on open-source project recommended settings
 const FLUX_KREA_SETTINGS = {
   // Supported resolutions (must be multiples of 16)
@@ -26,6 +28,7 @@ const FLUX_KREA_SETTINGS = {
 }
 
 export default function AIGenerator() {
+  const supabase = createClientComponentClient()
   const [prompt, setPrompt] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
@@ -37,14 +40,67 @@ export default function AIGenerator() {
     num_steps: FLUX_KREA_SETTINGS.stepsRange.default,
     seed: 42
   })
+  const [user, setUser] = useState<any>(null)
+  const [credits, setCredits] = useState<number>(0)
+  const [showLoginModal, setShowLoginModal] = useState(false)
   
-  // Set random seed on client initialization
+  // Set random seed on client initialization and check user session
   useEffect(() => {
     setSettings(prev => ({
       ...prev,
       seed: Math.floor(Math.random() * 1000000)
     }))
-  }, [])
+    
+    // 获取当前用户会话
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        setUser(session.user)
+        // 获取用户积分
+        const { data, error } = await supabase
+          .from('user_credits')
+          .select('credits')
+          .eq('user_id', session.user.id)
+          .single()
+        
+        if (data) {
+          setCredits(data.credits)
+        } else if (error) {
+          console.error('Error fetching credits:', error)
+        }
+      }
+    }
+    
+    getSession()
+    
+    // 监听认证状态变化
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session) {
+          setUser(session.user)
+          // 获取用户积分
+          const { data, error } = await supabase
+            .from('user_credits')
+            .select('credits')
+            .eq('user_id', session.user.id)
+            .single()
+          
+          if (data) {
+            setCredits(data.credits)
+          } else if (error) {
+            console.error('Error fetching credits:', error)
+          }
+        } else {
+          setUser(null)
+          setCredits(0)
+        }
+      }
+    )
+    
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [supabase])
   
   const selectedResolution = FLUX_KREA_SETTINGS.resolutions.find(
     r => r.width === settings.width && r.height === settings.height
@@ -53,6 +109,18 @@ export default function AIGenerator() {
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       setError('Prompt cannot be empty.')
+      return
+    }
+    
+    // 如果用户未登录，显示登录模态框
+    if (!user) {
+      setShowLoginModal(true)
+      return
+    }
+    
+    // 检查用户积分是否足够
+    if (credits <= 0) {
+      setError('您的积分不足，请充值后再试。')
       return
     }
     
@@ -82,6 +150,21 @@ export default function AIGenerator() {
         
         // 记录图片URL，方便调试
         console.log('Generated image URL:', data.imageUrl)
+        
+        // 扣除用户积分
+        if (user) {
+          const { error } = await supabase.rpc('decrement_user_credits', {
+            user_id_param: user.id,
+            amount: 1
+          })
+          
+          if (error) {
+            console.error('Error decrementing credits:', error)
+          } else {
+            // 更新本地积分状态
+            setCredits(prev => prev - 1)
+          }
+        }
       } else {
         setError(data.error || 'Generation failed, please try again later.')
       }
@@ -116,6 +199,23 @@ export default function AIGenerator() {
       link.click()
     }
   }
+  
+  const handleGoogleLogin = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`
+      }
+    })
+  }
+  
+  const handleCloseModal = () => {
+    setShowLoginModal(false)
+  }
+  
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+  }
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-100 py-16">
@@ -128,6 +228,41 @@ export default function AIGenerator() {
             Powered by FLUX.1 Krea - Create stunning images from text descriptions
           </p>
         </div>
+
+        {/* 用户信息显示 */}
+        {user && (
+          <div className="flex justify-end mb-4">
+            <div className="relative group">
+              <div className="flex items-center bg-white rounded-full px-4 py-2 shadow-md cursor-pointer">
+                <div className="flex items-center mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                  </svg>
+                  <span className="font-medium">{credits}</span>
+                </div>
+                <img 
+                  src={user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${user.email}&background=random`} 
+                  alt="User Avatar" 
+                  className="w-8 h-8 rounded-full"
+                />
+              </div>
+              
+              {/* 下拉菜单 */}
+              <div className="absolute right-0 mt-2 w-48 bg-black bg-opacity-80 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
+                <div className="p-4 border-b border-gray-700">
+                  <p className="text-white font-medium truncate">{user.email}</p>
+                  <p className="text-gray-300 text-sm">Level: Free</p>
+                </div>
+                <button 
+                  onClick={handleSignOut}
+                  className="w-full text-left px-4 py-2 text-white hover:bg-white hover:bg-opacity-10 transition-colors"
+                >
+                  Sign out
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
           {/* Input Section */}
@@ -222,6 +357,11 @@ export default function AIGenerator() {
             </button>
 
             <div className="text-center mt-3">
+              {!user && (
+                <p className="text-blue-600 font-medium">
+                  🎁 Sign in to get 20 Credits
+                </p>
+              )}
             </div>
           </div>
 
@@ -282,6 +422,37 @@ export default function AIGenerator() {
           </div>
         </div>
       </div>
+      
+      {/* 登录模态框 */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 shadow-2xl">
+            <h3 className="text-2xl font-bold text-center mb-6">Your luck of 20 Credits</h3>
+            <p className="text-gray-600 text-center mb-8">Sign in with Google to get it.</p>
+            
+            <div className="flex flex-col sm:flex-row gap-4">
+              <button
+                onClick={handleGoogleLogin}
+                className="flex-1 flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-700 font-medium hover:bg-gray-50 transition-colors shadow-sm"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px">
+                  <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                  <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                  <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                  <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                </svg>
+                Sign in
+              </button>
+              <button
+                onClick={handleCloseModal}
+                className="flex-1 bg-gray-100 rounded-lg px-4 py-3 text-gray-700 font-medium hover:bg-gray-200 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

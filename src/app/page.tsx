@@ -307,7 +307,7 @@ export default function HomePage() {
           {/* Gallery Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredGallery.map((item) => (
-              <div key={item.id} className="bg-white rounded-xl shadow-lg overflow-hidden group card-hover transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border border-gray-100">
+              <div key={item.id} className="bg-white rounded-xl shadow-lg overflow-hidden group card-hover transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl border border-gray-100 flex flex-col h-full">
                 <div className="aspect-square relative overflow-hidden">
                   <img 
                     src={item.imageUrl} 
@@ -315,8 +315,8 @@ export default function HomePage() {
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
                   />
                 </div>
-                <div className="p-6">
-                  <p className="text-gray-700 mb-0 text-base line-clamp-2">
+                <div className="p-6 flex-grow flex items-center">
+                  <p className="text-gray-700 mb-0 text-base whitespace-normal overflow-hidden" style={{display: 'block'}}>
                     {item.prompt}
                   </p>
                 </div>
