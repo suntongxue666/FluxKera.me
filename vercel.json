@@ -1,8 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "cd flux-krea-website && npm install && npm run build",
-  "outputDirectory": "flux-krea-website/.next",
+  "buildCommand": "npm install && npm run build",
+  "outputDirectory": ".next",
   "framework": "nextjs",
-  "installCommand": "cd flux-krea-website && npm install",
-  "rootDirectory": "flux-krea-website"
+  "installCommand": "npm install"
 }
