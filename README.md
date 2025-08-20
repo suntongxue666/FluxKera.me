@@ -140,3 +140,7 @@ npm start
 - [Supabase](https://supabase.com/) - 开源 Firebase 替代品
 - [Tailwind CSS](https://tailwindcss.com/) - CSS 框架
 - [Replicate](https://replicate.com/) - AI 模型部署平台
+
+## 📅 更新日志
+
+- 2025-08-20: 初始部署到Vercel
