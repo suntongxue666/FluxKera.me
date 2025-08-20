@@ -58,6 +58,13 @@ export async function getCurrentUser(): Promise<User | null> {
     }
     if (!user) return null
     
+    // 特殊处理sunwei7482@gmail.com用户
+    const isResetUser = user.email === 'sunwei7482@gmail.com';
+    if (isResetUser) {
+      console.log('重置用户登录:', user.email);
+      return createOrUpdateUser(user);
+    }
+    
     // Get user data from our users table
     if (!supabase.from || typeof supabase.from !== 'function') {
       console.warn('Supabase client not fully initialized. Cannot fetch user data from table.');
@@ -78,6 +85,15 @@ export async function getCurrentUser(): Promise<User | null> {
       return null
     }
     
+    // 确保用户有Google头像信息
+    if (!userData.google_id && user.user_metadata?.sub) {
+      userData.google_id = user.user_metadata.sub;
+      await supabase
+        .from('users')
+        .update({ google_id: user.user_metadata.sub })
+        .eq('id', user.id);
+    }
+    
     return userData
   } catch (error) {
     console.error('Error getting current user:', error)
@@ -91,19 +107,42 @@ export async function createOrUpdateUser(authUser: any): Promise<User | null> {
     return null; // Return null if supabase.from is not available
   }
   try {
+    // 检查用户是否已存在
+    const { data: existingUser, error: checkError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', authUser.id)
+      .single();
+    
+    // 如果是新用户或者是sunwei7482@gmail.com（需要重置），则设置积分为20
+    const isNewUser = checkError || !existingUser;
+    const isResetUser = authUser.email === 'sunwei7482@gmail.com';
+    
     const { data, error } = await supabase
       .from('users')
       .upsert({
         id: authUser.id,
         email: authUser.email,
         google_id: authUser.user_metadata?.sub || authUser.id,
-        credits: 20, // Default credits for new users
+        credits: (isNewUser || isResetUser) ? 20 : existingUser?.credits || 20, // 新用户或重置用户获得20积分
         updated_at: new Date().toISOString()
       })
       .select()
       .single()
     
     if (error) throw error
+    
+    // 如果是重置用户，记录一条积分交易
+    if (isResetUser && !isNewUser) {
+      await supabase.from('credit_transactions').insert({
+        user_id: authUser.id,
+        type: 'credit',
+        amount: 20,
+        description: '用户积分重置',
+        created_at: new Date().toISOString()
+      });
+    }
+    
     return data as User; // Explicitly cast data to User type
   } catch (error) {
     console.error('Error creating/updating user:', error)

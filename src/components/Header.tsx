@@ -78,7 +78,7 @@ export default function Header() {
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
             {isLoading ? (
-              <div className="w-24 h-10 bg-gray-100 animate-pulse rounded-lg"></div>
+              <div className="w-24 h-10 bg-gray-100 animate-pulse"></div>
             ) : user ? (
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
@@ -90,7 +90,7 @@ export default function Header() {
                 <div className="relative group">
                   <div className="flex items-center cursor-pointer">
                     <img 
-                      src={`https://ui-avatars.com/api/?name=${user.email}&background=random`} 
+                      src={user.google_id ? `https://ui-avatars.com/api/?name=${user.email}&background=random` : `https://ui-avatars.com/api/?name=${user.email}&background=random`} 
                       alt="User Avatar" 
                       className="w-8 h-8"
                     />
