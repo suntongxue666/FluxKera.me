@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     }
     
     // 检查用户积分
-    if (user.credits < 1) {
+    if (user.credits < 10) {
       return NextResponse.json(
         { success: false, error: 'Insufficient credits' },
         { status: 402 }
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         prompt: normalizedParams.prompt,
         image_url: imageUrl,
-        credits_used: 1,
+        credits_used: 10,
         created_at: new Date().toISOString()
       })
       
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
     // 使用存储过程扣除用户积分并记录交易
     const { error: creditError } = await supabaseServer.rpc('decrement_user_credits', {
       user_id_param: user.id,
-      amount: 1
+      amount: 10
     })
     
     if (creditError) {
@@ -143,8 +143,8 @@ export async function POST(request: NextRequest) {
       params: normalizedParams,
       generationTime: generationTime,
       estimatedTime: getEstimatedTime(normalizedParams.num_steps!),
-      creditsUsed: 1,
-      creditsRemaining: user.credits - 1
+      creditsUsed: 10,
+      creditsRemaining: user.credits - 10
     })
 
   } catch (error: any) {
