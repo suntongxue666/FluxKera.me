@@ -151,19 +151,9 @@ export default function AIGenerator() {
         // 记录图片URL，方便调试
         console.log('Generated image URL:', data.imageUrl)
         
-        // 扣除用户积分
-        if (user) {
-          const { error } = await supabase.rpc('decrement_user_credits', {
-            user_id_param: user.id,
-            amount: 10
-          })
-          
-          if (error) {
-            console.error('Error decrementing credits:', error)
-          } else {
-            // 更新本地积分状态
-            setCredits(prev => prev - 10)
-          }
+        // API已经扣除了积分，这里只需更新本地状态
+        if (user && data.creditsRemaining !== undefined) {
+          setCredits(data.creditsRemaining)
         }
       } else {
         setError(data.error || 'Generation failed, please try again later.')
