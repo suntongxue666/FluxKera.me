@@ -100,8 +100,8 @@ export async function POST(request: NextRequest) {
     // 检查是否有有效的API令牌，如果没有则使用示例图像
     if (!process.env.REPLICATE_API_TOKEN || process.env.REPLICATE_API_TOKEN === 'r8_dummy_token_for_development_only') {
       console.log('Using sample image (no valid API token)')
-      // 使用示例图像URL
-      imageUrl = 'https://replicate.delivery/pbxt/JzRtEXPKqQ9cMlCQfqHqYTFKFvbcWxKj9CILXCMRRHcUeHdFC/out-0.png';
+      // 使用公开可访问的示例图像URL
+      imageUrl = 'https://images.unsplash.com/photo-1682687982501-1e58ab814714';
       // 模拟生成延迟
       await new Promise(resolve => setTimeout(resolve, 2000));
     } else {

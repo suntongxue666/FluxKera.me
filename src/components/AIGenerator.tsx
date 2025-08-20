@@ -77,9 +77,11 @@ export default function AIGenerator() {
       const data = await response.json()
       
       if (data.success) {
-        // 使用代理API来解决CORS问题
-        const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(data.imageUrl)}`
-        setGeneratedImage(proxyUrl)
+        // 直接使用返回的图片URL
+        setGeneratedImage(data.imageUrl)
+        
+        // 记录图片URL，方便调试
+        console.log('Generated image URL:', data.imageUrl)
       } else {
         setError(data.error || 'Generation failed, please try again later.')
       }
