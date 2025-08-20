@@ -184,7 +184,7 @@ export default function HomePage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 md:py-40 lg:py-48">
           <div className="max-w-3xl">
             <h1 className="text-5xl md:text-6xl lg:text-[60px] font-bold mb-6 leading-tight animate-fadeInUp">
-              Create Stunning Images with <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 animate-shine relative">
+              Create Stunning Images with <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
                 Flux.1 Krea Dev AI Model
               </span>
             </h1>
