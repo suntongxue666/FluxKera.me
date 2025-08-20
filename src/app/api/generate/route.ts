@@ -95,7 +95,19 @@ export async function POST(request: NextRequest) {
     console.log('Starting image generation...')
     const startTime = Date.now()
     
-    const imageUrl = await generateImage(normalizedParams)
+    let imageUrl;
+    
+    // 检查是否有有效的API令牌，如果没有则使用示例图像
+    if (!process.env.REPLICATE_API_TOKEN || process.env.REPLICATE_API_TOKEN === 'r8_dummy_token_for_development_only') {
+      console.log('Using sample image (no valid API token)')
+      // 使用示例图像URL
+      imageUrl = 'https://replicate.delivery/pbxt/JzRtEXPKqQ9cMlCQfqHqYTFKFvbcWxKj9CILXCMRRHcUeHdFC/out-0.png';
+      // 模拟生成延迟
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    } else {
+      // 使用实际API生成图像
+      imageUrl = await generateImage(normalizedParams)
+    }
     
     const generationTime = Date.now() - startTime
     console.log(`Image generated in ${generationTime}ms`)
