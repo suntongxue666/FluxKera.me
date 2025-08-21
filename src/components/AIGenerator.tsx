@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Wand2, Settings, Loader2, Download, RefreshCw, AlertCircle, LogIn } from 'lucide-react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useUser } from '@/lib/UserContext'
 
 // Based on open-source project recommended settings
 const FLUX_KREA_SETTINGS = {
@@ -28,7 +28,7 @@ const FLUX_KREA_SETTINGS = {
 }
 
 export default function AIGenerator() {
-  const supabase = createClientComponentClient()
+  const { user, credits, refreshUser, signIn } = useUser()
   const [prompt, setPrompt] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
@@ -38,69 +38,9 @@ export default function AIGenerator() {
     height: 1024,
     guidance: FLUX_KREA_SETTINGS.guidanceRange.default,
     num_steps: FLUX_KREA_SETTINGS.stepsRange.default,
-    seed: 42
+    seed: Math.floor(Math.random() * 1000000)
   })
-  const [user, setUser] = useState<any>(null)
-  const [credits, setCredits] = useState<number>(0)
   const [showLoginModal, setShowLoginModal] = useState(false)
-  
-  // Set random seed on client initialization and check user session
-  useEffect(() => {
-    setSettings(prev => ({
-      ...prev,
-      seed: Math.floor(Math.random() * 1000000)
-    }))
-    
-    // 获取当前用户会话
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        setUser(session.user)
-        // 获取用户积分
-        const { data, error } = await supabase
-          .from('user_credits')
-          .select('credits')
-          .eq('user_id', session.user.id)
-          .single()
-        
-        if (data) {
-          setCredits(data.credits)
-        } else if (error) {
-          console.error('Error fetching credits:', error)
-        }
-      }
-    }
-    
-    getSession()
-    
-    // 监听认证状态变化
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session) {
-          setUser(session.user)
-          // 获取用户积分
-          const { data, error } = await supabase
-            .from('user_credits')
-            .select('credits')
-            .eq('user_id', session.user.id)
-            .single()
-          
-          if (data) {
-            setCredits(data.credits)
-          } else if (error) {
-            console.error('Error fetching credits:', error)
-          }
-        } else {
-          setUser(null)
-          setCredits(0)
-        }
-      }
-    )
-    
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [supabase])
   
   const selectedResolution = FLUX_KREA_SETTINGS.resolutions.find(
     r => r.width === settings.width && r.height === settings.height
@@ -151,9 +91,9 @@ export default function AIGenerator() {
         // 记录图片URL，方便调试
         console.log('Generated image URL:', data.imageUrl)
         
-        // API已经扣除了积分，这里只需更新本地状态
+        // API已经扣除了积分，这里刷新用户信息
         if (user && data.creditsRemaining !== undefined) {
-          setCredits(data.creditsRemaining)
+          await refreshUser()
         }
       } else {
         setError(data.error || 'Generation failed, please try again later.')
@@ -191,21 +131,13 @@ export default function AIGenerator() {
   }
   
   const handleGoogleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
-    })
+    await signIn()
   }
   
   const handleCloseModal = () => {
     setShowLoginModal(false)
   }
   
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-  }
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-100 py-16 relative">
