@@ -2,6 +2,23 @@
 
 # 设置变量
 USERNAME="tiktreeapp"
+COMMIT_MESSAGE="添加Google登录测试页面和调试功能"
+REPO="suntongxue666/FluxKera.me.git"
+
+# 提示输入令牌
+echo "请输入您的GitHub个人访问令牌 (不会显示在屏幕上):"
+read -s TOKEN
+
+if [ -z "$TOKEN" ]; then
+  echo "错误：未提供令牌"
+  exit 1
+fi
+#!/bin/bash
+
+#!/bin/bash
+
+# 设置变量
+USERNAME="tiktreeapp"
 TOKEN="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"  # 您的个人访问令牌
 COMMIT_MESSAGE="添加Google登录测试页面和调试功能"
 REPO="suntongxue666/FluxKera.me.git"
