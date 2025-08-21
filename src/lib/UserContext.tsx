@@ -58,10 +58,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const signIn = async () => {
     try {
       console.log('开始Google登录流程...')
+      console.log('当前URL:', window.location.href)
+      console.log('重定向URL:', `${window.location.origin}/auth/callback`)
+      
+      // 检查Supabase配置
+      console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
+      console.log('Supabase Anon Key是否存在:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
         }
       })
       
@@ -70,6 +81,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
         alert('登录失败: ' + error.message)
       } else {
         console.log('Google登录成功，重定向中...', data)
+        // 如果有URL，直接跳转
+        if (data?.url) {
+          console.log('正在跳转到:', data.url)
+          window.location.href = data.url
+        }
       }
     } catch (error) {
       console.error('Sign in error:', error)
