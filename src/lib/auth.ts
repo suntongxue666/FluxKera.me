@@ -4,6 +4,7 @@ export interface User {
   id: string
   email: string
   google_id: string
+  avatar_url: string | null
   credits: number
   created_at: string
   updated_at: string
@@ -85,12 +86,28 @@ export async function getCurrentUser(): Promise<User | null> {
       return null
     }
     
-    // 确保用户有Google头像信息
+    // 确保用户有Google头像信息和ID
+    let needsUpdate = false;
+    let updateData: any = {};
+    
     if (!userData.google_id && user.user_metadata?.sub) {
-      userData.google_id = user.user_metadata.sub;
+      updateData.google_id = user.user_metadata.sub;
+      needsUpdate = true;
+    }
+    
+    // 检查并更新头像URL
+    const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+    if (avatarUrl && (!userData.avatar_url || userData.avatar_url !== avatarUrl)) {
+      updateData.avatar_url = avatarUrl;
+      userData.avatar_url = avatarUrl;
+      needsUpdate = true;
+      console.log('更新用户头像:', avatarUrl);
+    }
+    
+    if (needsUpdate) {
       await supabase
         .from('users')
-        .update({ google_id: user.user_metadata.sub })
+        .update(updateData)
         .eq('id', user.id);
     }
     
@@ -118,12 +135,21 @@ export async function createOrUpdateUser(authUser: any): Promise<User | null> {
     const isNewUser = checkError || !existingUser;
     const isResetUser = authUser.email === 'sunwei7482@gmail.com';
     
+    // 获取Google头像URL
+    const avatarUrl = authUser.user_metadata?.avatar_url || 
+                     authUser.user_metadata?.picture || 
+                     null;
+    
+    console.log('用户元数据:', authUser.user_metadata);
+    console.log('头像URL:', avatarUrl);
+    
     const { data, error } = await supabase
       .from('users')
       .upsert({
         id: authUser.id,
         email: authUser.email,
         google_id: authUser.user_metadata?.sub || authUser.id,
+        avatar_url: avatarUrl,
         credits: (isNewUser || isResetUser) ? 20 : existingUser?.credits || 20, // 新用户或重置用户获得20积分
         updated_at: new Date().toISOString()
       })

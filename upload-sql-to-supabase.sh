@@ -17,4 +17,7 @@ read -s SUPABASE_SERVICE_KEY
 echo "正在上传SQL函数和RLS策略..."
 supabase db push --db-url "postgresql://postgres:${SUPABASE_SERVICE_KEY}@db.${SUPABASE_PROJECT_ID}.supabase.co:5432/postgres" ./supabase/migrations/20250821_create_functions.sql
 
+echo "正在添加avatar_url字段..."
+supabase db push --db-url "postgresql://postgres:${SUPABASE_SERVICE_KEY}@db.${SUPABASE_PROJECT_ID}.supabase.co:5432/postgres" ./supabase/migrations/20250821_add_avatar_url.sql
+
 echo "SQL文件上传完成！"

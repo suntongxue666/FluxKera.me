@@ -54,9 +54,9 @@ export default function Header() {
                 <div className="relative group">
                   <div className="flex items-center cursor-pointer">
                     <img 
-                      src={user.google_id ? `https://ui-avatars.com/api/?name=${user.email}&background=random` : `https://ui-avatars.com/api/?name=${user.email}&background=random`} 
+                      src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.email}&background=random`} 
                       alt="User Avatar" 
-                      className="w-8 h-8"
+                      className="w-8 h-8 rounded-full"
                     />
                   </div>
                   <div className="absolute right-0 mt-2 w-48 bg-black bg-opacity-80 backdrop-blur-sm rounded-lg shadow-xl py-2 z-10 hidden group-hover:block transform transition-all duration-300 origin-top-right">
