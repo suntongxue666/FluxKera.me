@@ -1,0 +1,59 @@
+From 80225861ff77afaf131839ea15e4e2f859749c2a Mon Sep 17 00:00:00 2001
+From: sunwei <sunwei7482@gmail.com>
+Date: Thu, 21 Aug 2025 12:56:47 +0800
+Subject: [PATCH] =?UTF-8?q?=E4=BF=AE=E5=A4=8D=E7=99=BB=E5=BD=95=E5=92=8C?=
+ =?UTF-8?q?=E7=A7=AF=E5=88=86=E9=97=AE=E9=A2=98?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ src/components/Header.tsx |  2 +-
+ src/lib/UserContext.tsx   | 11 ++++++++++-
+ 2 files changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/src/components/Header.tsx b/src/components/Header.tsx
+index a4e6b99..129a8fd 100644
+--- a/src/components/Header.tsx
++++ b/src/components/Header.tsx
+@@ -65,7 +65,7 @@ export default function Header() {
+                       <p className="text-gray-300 text-sm">Level: Free</p>
+                     </div>
+                     <button 
+-                      onClick={handleSignOut}
++                      onClick={signOut}
+                       className="flex items-center w-full px-4 py-2 text-left text-white hover:bg-white hover:bg-opacity-10 transition-colors"
+                     >
+                       <LogOut className="h-4 w-4 mr-2" />
+diff --git a/src/lib/UserContext.tsx b/src/lib/UserContext.tsx
+index 180b788..77cc7e1 100644
+--- a/src/lib/UserContext.tsx
++++ b/src/lib/UserContext.tsx
+@@ -57,14 +57,23 @@ export function UserProvider({ children }: { children: ReactNode }) {
+   // 登录方法
+   const signIn = async () => {
+     try {
+-      await supabase.auth.signInWithOAuth({
++      console.log('开始Google登录流程...')
++      const { data, error } = await supabase.auth.signInWithOAuth({
+         provider: 'google',
+         options: {
+           redirectTo: `${window.location.origin}/auth/callback`
+         }
+       })
++      
++      if (error) {
++        console.error('Google登录错误:', error)
++        alert('登录失败: ' + error.message)
++      } else {
++        console.log('Google登录成功，重定向中...', data)
++      }
+     } catch (error) {
+       console.error('Sign in error:', error)
++      alert('登录过程中发生错误，请查看控制台')
+     }
+   }
+ 
+-- 
+2.39.3 (Apple Git-145)
+
