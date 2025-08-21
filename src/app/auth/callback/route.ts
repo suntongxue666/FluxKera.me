@@ -6,16 +6,37 @@ import type { NextRequest } from 'next/server'
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
+  
+  console.log('回调URL:', request.url);
+  console.log('授权码存在:', !!code);
 
   if (code) {
     const cookieStore = cookies()
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
     
-    // 交换授权码获取会话
-    await supabase.auth.exchangeCodeForSession(code)
-    
-    // 获取当前用户
-    const { data: { user } } = await supabase.auth.getUser()
+    try {
+      // 交换授权码获取会话
+      const { error: sessionError } = await supabase.auth.exchangeCodeForSession(code)
+      
+      if (sessionError) {
+        console.error('交换会话失败:', sessionError)
+        return NextResponse.redirect(new URL('/?error=auth_session', request.url))
+      }
+      
+      // 获取当前用户
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      if (userError) {
+        console.error('获取用户失败:', userError)
+        return NextResponse.redirect(new URL('/?error=auth_user', request.url))
+      }
+      
+      if (!user) {
+        console.error('用户不存在')
+        return NextResponse.redirect(new URL('/?error=no_user', request.url))
+      }
+      
+      console.log('成功获取用户:', user.email)
     
     if (user) {
       // 创建或更新用户记录

@@ -87,13 +87,19 @@ export function UserProvider({ children }: { children: ReactNode }) {
       console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
       console.log('Supabase Anon Key是否存在:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
       
+      // 直接使用完整的重定向URL，确保正确处理
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      console.log('完整重定向URL:', redirectUrl);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent'
+            prompt: 'consent select_account', // 强制显示账号选择和授权页面
+            // 明确请求用户资料、邮箱和头像
+            scope: 'profile email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email'
           }
         }
       })

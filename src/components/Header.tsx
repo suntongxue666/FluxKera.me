@@ -43,9 +43,7 @@ export default function Header() {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            {loading ? (
-              <div className="w-24 h-10 bg-gray-100 animate-pulse"></div>
-            ) : user ? (
+            {user ? (
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
                   <Coins className="h-5 w-5 text-yellow-500" />
