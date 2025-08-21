@@ -57,14 +57,23 @@ export function UserProvider({ children }: { children: ReactNode }) {
   // 登录方法
   const signIn = async () => {
     try {
-      await supabase.auth.signInWithOAuth({
+      console.log('开始Google登录流程...')
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`
         }
       })
+      
+      if (error) {
+        console.error('Google登录错误:', error)
+        alert('登录失败: ' + error.message)
+      } else {
+        console.log('Google登录成功，重定向中...', data)
+      }
     } catch (error) {
       console.error('Sign in error:', error)
+      alert('登录过程中发生错误，请查看控制台')
     }
   }
 

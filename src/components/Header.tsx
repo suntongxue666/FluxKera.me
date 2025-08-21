@@ -65,7 +65,7 @@ export default function Header() {
                       <p className="text-gray-300 text-sm">Level: Free</p>
                     </div>
                     <button 
-                      onClick={handleSignOut}
+                      onClick={signOut}
                       className="flex items-center w-full px-4 py-2 text-left text-white hover:bg-white hover:bg-opacity-10 transition-colors"
                     >
                       <LogOut className="h-4 w-4 mr-2" />
