@@ -30,6 +30,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
       const { data: { session } } = await supabase.auth.getSession()
       
       if (session) {
+        // 获取认证用户信息（包含元数据）
+        const { data: authUser } = await supabase.auth.getUser()
+        
         // 获取用户信息和积分
         const { data, error } = await supabase
           .from('users')
@@ -38,6 +41,25 @@ export function UserProvider({ children }: { children: ReactNode }) {
           .single()
         
         if (data && !error) {
+          // 如果数据库中没有头像URL但auth用户有，直接使用auth用户的头像
+          if (!data.avatar_url && authUser?.user?.user_metadata) {
+            data.avatar_url = authUser.user.user_metadata.avatar_url || 
+                             authUser.user.user_metadata.picture;
+            
+            // 异步更新数据库中的头像URL
+            if (data.avatar_url) {
+              supabase
+                .from('users')
+                .update({ avatar_url: data.avatar_url })
+                .eq('id', session.user.id)
+                .then(() => console.log('头像URL已更新到数据库'))
+                .catch(err => console.error('更新头像URL失败:', err));
+            }
+          }
+          
+          console.log('用户数据:', data);
+          console.log('头像URL:', data.avatar_url);
+          
           setUser(data as User)
           setCredits(data.credits)
         } else {

@@ -29,6 +29,14 @@ export async function GET(request: NextRequest) {
         console.error('Error fetching user:', fetchError)
       }
       
+      // 获取Google头像URL
+      const avatarUrl = user.user_metadata?.avatar_url || 
+                       user.user_metadata?.picture || 
+                       null;
+      
+      console.log('用户元数据:', user.user_metadata);
+      console.log('头像URL:', avatarUrl);
+      
       // 如果用户不存在，创建新用户并给予初始积分
       if (!existingUser) {
         const { error: insertError } = await supabase
@@ -37,6 +45,7 @@ export async function GET(request: NextRequest) {
             id: user.id,
             email: user.email || '',
             google_id: user.user_metadata?.sub || user.id,
+            avatar_url: avatarUrl,
             credits: 20, // 新用户获得20积分
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -54,6 +63,23 @@ export async function GET(request: NextRequest) {
               amount: 20,
               description: '新用户注册奖励'
             })
+        }
+      } else {
+        // 如果用户已存在，更新头像URL
+        if (avatarUrl && (!existingUser.avatar_url || existingUser.avatar_url !== avatarUrl)) {
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({
+              avatar_url: avatarUrl,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', user.id)
+          
+          if (updateError) {
+            console.error('Error updating user avatar:', updateError)
+          } else {
+            console.log('用户头像已更新:', avatarUrl)
+          }
         }
       }
     }
