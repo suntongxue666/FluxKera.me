@@ -12,6 +12,18 @@ const nextConfig: NextConfig = {
     // For more details, refer to Next.js documentation on experimental features.
     // https://nextjs.org/docs/advanced-features/turbopack
     // https://nextjs.org/docs/app/building-your-application/configuring/next-config
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
+  },
+  // Disable Turbopack explicitly
+  future: {
+    webpack5: true,
   },
 };
 
