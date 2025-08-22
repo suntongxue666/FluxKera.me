@@ -178,7 +178,7 @@ export default function HomePage() {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative text-white overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/banner.jpg')] bg-cover bg-center bg-fixed"></div>
+        <div className="absolute inset-0 bg-[url('/banner.jpg')] bg-cover bg-center"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-black/30"></div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 md:py-40 lg:py-48">
@@ -189,7 +189,7 @@ export default function HomePage() {
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-200 max-w-2xl mb-10 animate-fadeInUp" style={{animationDelay: "0.2s"}}>
-              Turn text into stunning, HQ images with Flux.1 Krea Dev — Powered by 12B-Parameter AI model.
+              Turn text into stunning, HQ images with Flux.1 Krea — Powered by 12B-Parameter AI model.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 animate-fadeInUp" style={{animationDelay: "0.4s"}}>
               <Link 
