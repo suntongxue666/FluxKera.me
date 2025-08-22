@@ -68,12 +68,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
           
           if (data) {
             setCredits(data.credits)
+            console.log('用户积分已更新:', data.credits);
           } else if (error) {
-            console.error('获取积分错误:', error)
+            console.error('获取积分错误:', error);
+            // 即使获取积分失败，也确保用户信息被设置
+            setCredits(0);
           }
         } else {
-          setUser(null)
-          setCredits(0)
+          console.log('用户已注销');
+          setUser(null);
+          setCredits(0);
         }
       }
     )
