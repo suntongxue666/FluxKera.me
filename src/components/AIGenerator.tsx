@@ -2,11 +2,7 @@
 
 import { useState } from 'react'
 import { Wand2, Settings, Loader2, Download, RefreshCw, AlertCircle, LogIn } from 'lucide-react'
-<<<<<<< Updated upstream
-import { useUser } from '@/lib/UserContext'
-=======
 import { useUser } from '@/lib/userContext'
->>>>>>> Stashed changes
 
 // Based on open-source project recommended settings
 const FLUX_KREA_SETTINGS = {
@@ -32,11 +28,7 @@ const FLUX_KREA_SETTINGS = {
 }
 
 export default function AIGenerator() {
-<<<<<<< Updated upstream
-  const { user, credits, refreshUser, signIn } = useUser()
-=======
-  const { user, credits, signIn, refreshCredits } = useUser()
->>>>>>> Stashed changes
+const { user, credits, signIn, refreshCredits } = useUser()
   const [prompt, setPrompt] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
@@ -50,17 +42,13 @@ export default function AIGenerator() {
   })
   const [showLoginModal, setShowLoginModal] = useState(false)
   
-<<<<<<< Updated upstream
-=======
-  // Set random seed on client initialization
+// Set random seed on client initialization
   useEffect(() => {
     setSettings(prev => ({
       ...prev,
       seed: Math.floor(Math.random() * 1000000)
     }))
   }, [])
-  
->>>>>>> Stashed changes
   const selectedResolution = FLUX_KREA_SETTINGS.resolutions.find(
     r => r.width === settings.width && r.height === settings.height
   ) || FLUX_KREA_SETTINGS.resolutions[0]
@@ -110,15 +98,8 @@ export default function AIGenerator() {
         // 记录图片URL，方便调试
         console.log('Generated image URL:', data.imageUrl)
         
-<<<<<<< Updated upstream
-        // API已经扣除了积分，这里刷新用户信息
-        if (user && data.creditsRemaining !== undefined) {
-          await refreshUser()
-        }
-=======
-        // 刷新用户积分
+// 刷新用户积分
         await refreshCredits()
->>>>>>> Stashed changes
       } else {
         setError(data.error || 'Generation failed, please try again later.')
       }
@@ -161,10 +142,7 @@ export default function AIGenerator() {
   const handleCloseModal = () => {
     setShowLoginModal(false)
   }
-<<<<<<< Updated upstream
-  
-=======
->>>>>>> Stashed changes
+
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-100 py-16 relative">
