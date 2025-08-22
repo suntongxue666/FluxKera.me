@@ -22,7 +22,7 @@ export default function UserStatus() {
           <div className="relative group">
             <div className="flex items-center cursor-pointer">
               <img 
-                src={user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || '')}&background=random`} 
+                src={user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || '')}&background=random`} 
                 alt="User Avatar" 
                 className="w-8 h-8 rounded-full object-cover"
               />

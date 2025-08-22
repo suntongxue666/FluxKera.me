@@ -1,5 +1,3 @@
-'use client'
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { User } from './auth'
@@ -42,6 +40,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
           setCredits(data.credits)
         } else {
           console.error('Error fetching user data:', error)
+          // 如果获取用户数据失败，尝试从auth.user获取基本信息
+          const authUser = session.user;
+          if (authUser) {
+            setUser({
+              id: authUser.id,
+              email: authUser.email || '',
+              google_id: authUser.user_metadata?.sub || '',
+              avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || null,
+              credits: 0,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            } as User)
+            setCredits(0)
+          }
         }
       } else {
         setUser(null)
@@ -111,6 +123,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     // 监听认证状态变化
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event) => {
+        console.log('Auth state changed:', event)
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           await refreshUser()
         } else if (event === 'SIGNED_OUT') {

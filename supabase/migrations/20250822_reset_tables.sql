@@ -21,13 +21,20 @@ CREATE TABLE users (
 -- 创建RLS策略
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
+-- 允许认证用户查看自己的信息
 CREATE POLICY "用户只能查看自己的信息" 
   ON users FOR SELECT 
   USING (auth.uid() = id);
 
+-- 允许认证用户更新自己的信息
 CREATE POLICY "用户只能更新自己的信息" 
   ON users FOR UPDATE 
   USING (auth.uid() = id);
+
+-- 允许认证用户插入自己的信息
+CREATE POLICY "用户只能插入自己的信息" 
+  ON users FOR INSERT 
+  WITH CHECK (auth.uid() = id);
 
 -- 创建简单的积分交易表（可选）
 CREATE TABLE credit_transactions (
