@@ -1,5 +1,3 @@
-'use client'
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { User } from './auth'
@@ -27,9 +25,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
   // 刷新用户信息
   const refreshUser = async () => {
     try {
+      setLoading(true)
       const { data: { session } } = await supabase.auth.getSession()
       
       if (session) {
+        console.log('Session user ID:', session.user.id)
         // 获取用户信息和积分
         const { data, error } = await supabase
           .from('users')
@@ -38,26 +38,51 @@ export function UserProvider({ children }: { children: ReactNode }) {
           .single()
         
         if (data && !error) {
+          console.log('User data from database:', data)
           setUser(data as User)
           setCredits(data.credits)
         } else {
-          console.error('Error fetching user data:', error)
+          console.error('Error fetching user data from database:', error)
           // 如果获取用户数据失败，尝试从auth.user获取基本信息
-          const authUser = session.user;
+          const authUser = session.user
           if (authUser) {
-            setUser({
-              id: authUser.id,
-              email: authUser.email || '',
-              google_id: authUser.user_metadata?.sub || '',
-              avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || null,
-              credits: 0,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            } as User)
-            setCredits(0)
+            // 尝试创建用户记录
+            const { data: userData, error: createError } = await supabase
+              .from('users')
+              .upsert({
+                id: authUser.id,
+                email: authUser.email || '',
+                google_id: authUser.user_metadata?.sub || '',
+                avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || null,
+                credits: 20, // 新用户默认20积分
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .select()
+              .single()
+            
+            if (userData && !createError) {
+              console.log('User created/updated successfully:', userData)
+              setUser(userData as User)
+              setCredits(userData.credits)
+            } else {
+              console.error('Error creating user:', createError)
+              // 最后的备选方案
+              setUser({
+                id: authUser.id,
+                email: authUser.email || '',
+                google_id: authUser.user_metadata?.sub || '',
+                avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || null,
+                credits: 0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              } as User)
+              setCredits(0)
+            }
           }
         }
       } else {
+        console.log('No session found')
         setUser(null)
         setCredits(0)
       }
@@ -124,8 +149,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
     
     // 监听认证状态变化
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event) => {
-        console.log('Auth state changed:', event)
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user.id)
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           await refreshUser()
         } else if (event === 'SIGNED_OUT') {

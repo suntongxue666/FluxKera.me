@@ -47,6 +47,8 @@ export async function GET(request: NextRequest) {
         // 检查是否为内测账号需要重置
         const isResetUser = user.email === 'sunwei7482@gmail.com' || user.email === 'tiktreeapp@gmail.com';
         
+        let finalUserdata = null;
+        
         // 如果用户不存在或为内测账号需要重置，创建新用户并给予初始积分
         if (!existingUser || isResetUser) {
           console.log('Creating/updating user with data:', {
@@ -58,7 +60,7 @@ export async function GET(request: NextRequest) {
           });
           
           // 简化用户创建逻辑，移除不存在的full_name字段
-          const { error: insertError, data: insertData } = await supabase
+          const { data: insertData, error: insertError } = await supabase
             .from('users')
             .upsert({
               id: user.id,
@@ -72,6 +74,8 @@ export async function GET(request: NextRequest) {
               onConflict: 'id',
               returning: 'representation'
             })
+            .select()
+            .single()
           
           if (insertError) {
             console.error('Error creating user:', insertError)
@@ -79,6 +83,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.redirect(new URL('/?error=user_creation_failed', request.url))
           } else {
             console.log('User created/updated successfully:', insertData);
+            finalUserdata = insertData;
             // 记录积分交易
             const { error: transactionError, data: transactionData } = await supabase
               .from('credit_transactions')
@@ -101,7 +106,7 @@ export async function GET(request: NextRequest) {
           // 更新现有用户信息
           console.log('Updating existing user...');
           // 简化用户更新逻辑，移除不存在的full_name字段
-          const { error: updateError, data: updateData } = await supabase
+          const { data: updateData, error: updateError } = await supabase
             .from('users')
             .update({
               email: user.email || '',
@@ -110,12 +115,19 @@ export async function GET(request: NextRequest) {
             })
             .eq('id', user.id)
             .select()
+            .single()
           
           if (updateError) {
             console.error('Error updating user:', updateError)
           } else {
             console.log('User updated successfully:', updateData);
+            finalUserdata = updateData;
           }
+        }
+        
+        // 确保用户数据已正确保存
+        if (finalUserdata) {
+          console.log('Final user data:', finalUserdata);
         }
       } catch (error) {
         console.error('Unexpected error during user creation/update:', error)
