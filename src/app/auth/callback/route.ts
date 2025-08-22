@@ -25,65 +25,72 @@ export async function GET(request: NextRequest) {
     if (user) {
       console.log('Authenticated user:', user)
       
-      // 检查用户是否已存在
-      const { data: existingUser, error: fetchError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-      
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Error fetching user:', fetchError)
-      }
-      
-      // 如果用户不存在，创建新用户并给予初始积分
-      if (!existingUser) {
-        const { error: insertError } = await supabase
+      try {
+        // 检查用户是否已存在
+        const { data: existingUser, error: fetchError } = await supabase
           .from('users')
-          .insert({
-            id: user.id,
-            email: user.email || '',
-            google_id: user.user_metadata?.sub || user.id,
-            avatar_url: user.user_metadata?.avatar_url || null,
-            full_name: user.user_metadata?.full_name || user.email || '',
-            credits: 20, // 新用户获得20积分
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
+          .select('*')
+          .eq('id', user.id)
+          .single()
         
-        if (insertError) {
-          console.error('Error creating user:', insertError)
-          return NextResponse.redirect(new URL('/?error=user_creation_failed', request.url))
-        } else {
-          // 记录积分交易
-          const { error: transactionError } = await supabase
-            .from('credit_transactions')
+        if (fetchError && fetchError.code !== 'PGRST116') {
+          console.error('Error fetching user:', fetchError)
+        }
+        
+        // 如果用户不存在，创建新用户并给予初始积分
+        if (!existingUser) {
+          const { error: insertError } = await supabase
+            .from('users')
             .insert({
-              user_id: user.id,
-              type: 'credit',
-              amount: 20,
-              description: '新用户注册奖励'
+              id: user.id,
+              email: user.email || '',
+              google_id: user.user_metadata?.sub || user.id,
+              avatar_url: user.user_metadata?.avatar_url || null,
+              full_name: user.user_metadata?.full_name || user.email || '',
+              credits: 20, // 新用户获得20积分
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             })
           
-          if (transactionError) {
-            console.error('Error creating credit transaction:', transactionError)
+          if (insertError) {
+            console.error('Error creating user:', insertError)
+            // 即使创建用户失败，也重定向到首页而不是错误页面
+            return NextResponse.redirect(new URL('/', request.url))
+          } else {
+            // 记录积分交易
+            const { error: transactionError } = await supabase
+              .from('credit_transactions')
+              .insert({
+                user_id: user.id,
+                type: 'credit',
+                amount: 20,
+                description: '新用户注册奖励'
+              })
+            
+            if (transactionError) {
+              console.error('Error creating credit transaction:', transactionError)
+            }
+          }
+        } else {
+          // 更新现有用户信息
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({
+              email: user.email || '',
+              avatar_url: user.user_metadata?.avatar_url || null,
+              full_name: user.user_metadata?.full_name || user.email || '',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', user.id)
+          
+          if (updateError) {
+            console.error('Error updating user:', updateError)
           }
         }
-      } else {
-        // 更新现有用户信息
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({
-            email: user.email || '',
-            avatar_url: user.user_metadata?.avatar_url || null,
-            full_name: user.user_metadata?.full_name || user.email || '',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', user.id)
-        
-        if (updateError) {
-          console.error('Error updating user:', updateError)
-        }
+      } catch (error) {
+        console.error('Unexpected error during user creation/update:', error)
+        // 即使出现意外错误，也重定向到首页而不是错误页面
+        return NextResponse.redirect(new URL('/', request.url))
       }
     }
   }
