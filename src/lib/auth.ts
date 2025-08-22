@@ -131,9 +131,9 @@ export async function createOrUpdateUser(authUser: any): Promise<User | null> {
       .eq('id', authUser.id)
       .single();
     
-    // 如果是新用户或者是sunwei7482@gmail.com（需要重置），则设置积分为20
+    // 如果是新用户或者是内测账号（需要重置），则设置积分为20
     const isNewUser = checkError || !existingUser;
-    const isResetUser = authUser.email === 'sunwei7482@gmail.com';
+    const isResetUser = authUser.email === 'sunwei7482@gmail.com' || authUser.email === 'tiktreeapp@gmail.com';
     
     // 获取Google头像URL
     const avatarUrl = authUser.user_metadata?.avatar_url || 

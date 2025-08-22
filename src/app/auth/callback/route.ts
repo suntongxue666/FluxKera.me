@@ -37,19 +37,24 @@ export async function GET(request: NextRequest) {
           console.error('Error fetching user:', fetchError)
         }
         
-        // 如果用户不存在，创建新用户并给予初始积分
-        if (!existingUser) {
+        // 检查是否为内测账号需要重置
+        const isResetUser = user.email === 'sunwei7482@gmail.com' || user.email === 'tiktreeapp@gmail.com';
+        
+        // 如果用户不存在或为内测账号需要重置，创建新用户并给予初始积分
+        if (!existingUser || isResetUser) {
           const { error: insertError } = await supabase
             .from('users')
-            .insert({
+            .upsert({
               id: user.id,
               email: user.email || '',
               google_id: user.user_metadata?.sub || user.id,
               avatar_url: user.user_metadata?.avatar_url || null,
               full_name: user.user_metadata?.full_name || user.email || '',
-              credits: 20, // 新用户获得20积分
+              credits: 20, // 新用户或重置用户获得20积分
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'id'
             })
           
           if (insertError) {
@@ -64,7 +69,7 @@ export async function GET(request: NextRequest) {
                 user_id: user.id,
                 type: 'credit',
                 amount: 20,
-                description: '新用户注册奖励'
+                description: isResetUser ? '用户积分重置' : '新用户注册奖励'
               })
             
             if (transactionError) {
