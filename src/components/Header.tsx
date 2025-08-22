@@ -2,12 +2,20 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+<<<<<<< Updated upstream
 import { Menu, X, Zap, UserIcon, LogOut, Coins } from 'lucide-react'
 import { useUser } from '@/lib/UserContext'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { user, credits, loading, signIn, signOut } = useUser()
+=======
+import { Menu, X, Zap } from 'lucide-react'
+import UserStatus from './UserStatus'
+
+export default function Header() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+>>>>>>> Stashed changes
 
   return (
     <header className="bg-white shadow-md backdrop-blur-md bg-white/90 sticky top-0 z-50 border-b border-gray-200">
@@ -42,6 +50,7 @@ export default function Header() {
           </nav>
 
           {/* Auth Buttons */}
+<<<<<<< Updated upstream
           <div className="hidden md:flex items-center space-x-4">
             {loading ? (
               <div className="w-24 h-10 bg-gray-100 animate-pulse"></div>
@@ -89,6 +98,9 @@ export default function Header() {
               </button>
             )}
           </div>
+=======
+          <UserStatus />
+>>>>>>> Stashed changes
 
           {/* Mobile menu button */}
           <button
@@ -131,6 +143,7 @@ export default function Header() {
               >
                 Gallery
               </Link>
+<<<<<<< Updated upstream
               <div className="flex flex-col space-y-2 pt-4 border-t">
                 {user ? (
                   <>
@@ -161,6 +174,8 @@ export default function Header() {
                   </button>
                 )}
               </div>
+=======
+>>>>>>> Stashed changes
             </div>
           </div>
         )}
