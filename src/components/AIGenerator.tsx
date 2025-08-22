@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Wand2, Settings, Loader2, Download, RefreshCw, AlertCircle, LogIn } from 'lucide-react'
 import { useUser } from '@/lib/userContext'
 
@@ -28,7 +28,7 @@ const FLUX_KREA_SETTINGS = {
 }
 
 export default function AIGenerator() {
-const { user, credits, signIn, refreshCredits } = useUser()
+  const { user, credits, signIn, refreshCredits } = useUser()
   const [prompt, setPrompt] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
@@ -42,13 +42,14 @@ const { user, credits, signIn, refreshCredits } = useUser()
   })
   const [showLoginModal, setShowLoginModal] = useState(false)
   
-// Set random seed on client initialization
+  // Set random seed on client initialization
   useEffect(() => {
     setSettings(prev => ({
       ...prev,
       seed: Math.floor(Math.random() * 1000000)
     }))
   }, [])
+  
   const selectedResolution = FLUX_KREA_SETTINGS.resolutions.find(
     r => r.width === settings.width && r.height === settings.height
   ) || FLUX_KREA_SETTINGS.resolutions[0]
@@ -98,7 +99,7 @@ const { user, credits, signIn, refreshCredits } = useUser()
         // 记录图片URL，方便调试
         console.log('Generated image URL:', data.imageUrl)
         
-// 刷新用户积分
+        // 刷新用户积分
         await refreshCredits()
       } else {
         setError(data.error || 'Generation failed, please try again later.')
@@ -142,7 +143,6 @@ const { user, credits, signIn, refreshCredits } = useUser()
   const handleCloseModal = () => {
     setShowLoginModal(false)
   }
-
 
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-100 py-16 relative">
