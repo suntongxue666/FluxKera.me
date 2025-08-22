@@ -54,10 +54,10 @@ export async function GET(request: NextRequest) {
             email: user.email || '',
             google_id: user.user_metadata?.sub || user.id,
             avatar_url: user.user_metadata?.avatar_url || null,
-            full_name: user.user_metadata?.full_name || user.email || '',
             credits: 20
           });
           
+          // 简化用户创建逻辑，移除不存在的full_name字段
           const { error: insertError, data: insertData } = await supabase
             .from('users')
             .upsert({
@@ -65,7 +65,6 @@ export async function GET(request: NextRequest) {
               email: user.email || '',
               google_id: user.user_metadata?.sub || user.id,
               avatar_url: user.user_metadata?.avatar_url || null,
-              full_name: user.user_metadata?.full_name || user.email || '',
               credits: 20, // 新用户或重置用户获得20积分
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
@@ -101,12 +100,12 @@ export async function GET(request: NextRequest) {
         } else {
           // 更新现有用户信息
           console.log('Updating existing user...');
+          // 简化用户更新逻辑，移除不存在的full_name字段
           const { error: updateError, data: updateData } = await supabase
             .from('users')
             .update({
               email: user.email || '',
               avatar_url: user.user_metadata?.avatar_url || null,
-              full_name: user.user_metadata?.full_name || user.email || '',
               updated_at: new Date().toISOString()
             })
             .eq('id', user.id)
