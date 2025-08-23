@@ -6,43 +6,43 @@ import { Heart, Download, Eye } from 'lucide-react'
 const sampleImages = [
   {
     id: 1,
-    url: '/api/placeholder/400/400',
-    prompt: 'A beautiful sunset over mountains with a lake reflection',
+    url: 'https://black-forest-labs-flux-1-krea-dev.hf.space/gradio_api/file=/tmp/gradio/ee38188a35e86a2ec841bbbc463358259c64e8a09c8b366f0dd0a05e7b49296a/image.webp',
+    prompt: 'Two weird wizards, one old, one younger in different patchwork wizard garb playing chess. They are sitting opposite to each other. The black and white chess pieces  are floating in the air. The wizards are just watching. Background a bookcase with leatherbound magical books. Realistic, detailed, colorful',
     likes: 24,
     downloads: 12
   },
   {
     id: 2,
-    url: '/api/placeholder/400/400',
-    prompt: 'Cyberpunk city at night with neon lights',
+    url: 'https://black-forest-labs-flux-1-krea-dev.hf.space/gradio_api/file=/tmp/gradio/1542a92ea2b8121016795941979c9abb52e32628178977091414bf1490ef9f53/image.webp',
+    prompt: 'Blue hour, Scandinavia. Fashion portrait of a dark skinned model. Lit with a red key light and a visible backlight',
     likes: 18,
     downloads: 8
   },
   {
     id: 3,
-    url: '/api/placeholder/400/400',
-    prompt: 'Abstract art with flowing colors and geometric shapes',
+    url: 'https://black-forest-labs-flux-1-krea-dev.hf.space/gradio_api/file=/tmp/gradio/37c4ab02ccca546dbeef197c64530edfd704db4ddcafb5102bbd815cdc6e4fb0/image.webp',
+    prompt: 'A fully 4k completely transparent clean glass detailed Star Wars Darth Vader helmet as lush terrarium.',
     likes: 31,
     downloads: 15
   },
   {
     id: 4,
-    url: '/api/placeholder/400/400',
-    prompt: 'Portrait of a wise old wizard with a long beard',
+    url: 'https://black-forest-labs-flux-1-krea-dev.hf.space/gradio_api/file=/tmp/gradio/132e0bfdc288545ede782c648f04072e345513e576d8848191dfe873ecf9b037/image.webp',
+    prompt: 'A deeply emotional, dark fantasy portrait of a tall warrior in dark, weathered plate armor and a delicate angel with large, white feathered wings. They stand in a somber and intimate embrace, with the angel resting her head against the warrior\'s chest, and the warrior bowing his head over hers. The style is hyperrealistic and melancholic, sorrow, or farewell.',
     likes: 42,
     downloads: 22
   },
   {
     id: 5,
-    url: '/api/placeholder/400/400',
-    prompt: 'Tropical beach with palm trees and crystal clear water',
+    url: 'https://black-forest-labs-flux-1-krea-dev.hf.space/gradio_api/file=/tmp/gradio/d0890ed669cafa14da719c72accc52d3f192bd3986227b9e94775bd201da4bf9/image.webp',
+    prompt: 'A cinematic, high-resolution photo of a luxurious green crocodile leather handbag placed gently on soft, lush grass at the edge of a calm river. The bag is rich emerald green with a gold clasp, shining subtly in natural sunlight. Around it, delicate light pink wildflowers bloom and reflect in the shallow water nearby. Style: ultra-realistic fashion editorial photography.',
     likes: 28,
     downloads: 14
   },
   {
     id: 6,
-    url: '/api/placeholder/400/400',
-    prompt: 'Steampunk mechanical dragon with brass gears',
+    url: 'https://black-forest-labs-flux-1-krea-dev.hf.space/gradio_api/file=/tmp/gradio/ee7d121bc64ce996f593b3cf773aa23be6ea577d66bd4b41a22a902a9c061ee0/image.webp',
+    prompt: '35mm photo of a whimsical squirrel playing a violin, wearing a tiny worn vintage hat, standing on a large wide stump in a lush forest',
     likes: 35,
     downloads: 18
   }
@@ -98,7 +98,11 @@ export default function GalleryPage() {
               onClick={() => setSelectedImage(image)}
             >
               <div className="aspect-square bg-gradient-to-br from-blue-200 to-purple-200 flex items-center justify-center relative group">
-                <span className="text-gray-600">Sample Image {image.id}</span>
+                <img 
+                  src={image.url} 
+                  alt={image.prompt}
+                  className="w-full h-full object-cover"
+                />
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all flex items-center justify-center">
                   <Eye className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
@@ -156,7 +160,11 @@ export default function GalleryPage() {
               </div>
               
               <div className="aspect-square bg-gradient-to-br from-blue-200 to-purple-200 rounded-lg mb-4 flex items-center justify-center">
-                <span className="text-gray-600">Sample Image {selectedImage.id}</span>
+                <img 
+                  src={selectedImage.url} 
+                  alt={selectedImage.prompt}
+                  className="w-full h-full object-cover rounded-lg"
+                />
               </div>
               
               <div className="space-y-4">
