@@ -111,6 +111,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       setCredits(0)
     } finally {
       console.log('=== REFRESH USER END ===')
+      console.log('Final user state:', user)
+      console.log('Final credits:', credits)
       setLoading(false)
     }
   }
