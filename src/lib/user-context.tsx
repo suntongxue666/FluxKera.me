@@ -176,6 +176,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // 初始化和监听认证状态变化
   useEffect(() => {
+    // 页面加载时立即刷新用户信息
     refreshUser()
     
     // 监听认证状态变化
@@ -183,10 +184,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user.id)
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          // 延迟一下再刷新用户信息，确保认证回调已完成
-          setTimeout(async () => {
-            await refreshUser()
-          }, 1500)
+          // 立即刷新用户信息
+          await refreshUser()
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
           setCredits(0)
