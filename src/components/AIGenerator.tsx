@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Wand2, Settings, Loader2, Download, RefreshCw, AlertCircle, LogIn } from 'lucide-react'
-import { useUser } from '@/lib/userContext'
+import { useUser } from '@/lib/user-context'
 
 // Based on open-source project recommended settings
 const FLUX_KREA_SETTINGS = {
@@ -28,7 +28,7 @@ const FLUX_KREA_SETTINGS = {
 }
 
 export default function AIGenerator() {
-  const { user, credits, signIn, refreshCredits } = useUser()
+  const { user, credits, signIn, refreshUser } = useUser()
   const [prompt, setPrompt] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
@@ -100,7 +100,7 @@ export default function AIGenerator() {
         console.log('Generated image URL:', data.imageUrl)
         
         // 刷新用户积分
-        await refreshCredits()
+        await refreshUser()
       } else {
         setError(data.error || 'Generation failed, please try again later.')
       }

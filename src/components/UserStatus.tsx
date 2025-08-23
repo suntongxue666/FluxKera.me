@@ -1,7 +1,7 @@
 'use client'
 
 import { LogOut } from 'lucide-react'
-import { useUser } from '@/lib/userContext'
+import { useUser } from '@/lib/user-context'
 import type { User } from '@/lib/auth'
 
 export default function UserStatus() {
