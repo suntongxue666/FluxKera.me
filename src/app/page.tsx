@@ -163,13 +163,38 @@ const styles = {
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState('all')
 
+  // 使用本地图片或者更稳定的图片URL
   const galleryItems = [
-    { id: 1, prompt: 'Photo of two beautiful lady having a tea party in a lush garden', imageUrl: 'https://black-forest-labs-flux-1-krea-dev.hf.space/gradio_api/file=/tmp/gradio/17f3f8d90d0ed2b11373aa2bf1d4ee9d32f146c63082393ad8759bb4205e6e01/image.webp' },
-    { id: 2, prompt: 'portrait of a rugged middle-aged man, sharp blue eyes, wavy messy hair, thick beard with touches of gray, wearing casual shirt, cinematic natural lighting, ultra realistic, detailed skin texture, intense gaze.', imageUrl: 'https://black-forest-labs-flux-1-krea-dev.hf.space/gradio_api/file=/tmp/gradio/b25a59ba6f012fbebb512aa9a8e87060402d98f4301e570df92936dfa78ddca8/image.webp' },
-    { id: 3, prompt: 'Realistic photo of a cat as a pirate, everyday photo on a ship, complex chaotic scene with many details', imageUrl: 'https://black-forest-labs-flux-1-krea-dev.hf.space/gradio_api/file=/tmp/gradio/7121049c73d63f9739ecbd9c201c5986f4faee88fabf61e911fe52ae44fd439c/image.webp' },
-    { id: 4, prompt: 'a tiny astronaut hatching from an egg on the moon', imageUrl: 'https://replicate.delivery/yhqm/QeGlhr8w4CWefov8rFAozycqveU4anxkYuUVxANfolFP710bC/out-0.webp' },
-    { id: 5, prompt: 'black forest gateau cake spelling out the words "FLUX SCHNELL", tasty, food photography, dynamic shot', imageUrl: 'https://replicate.delivery/yhqm/hcDDSNf633zeDUz9sWkKfaftcfJLWIvuhn9vfCFWmufxelmemA/out-0.webp' },
-    { id: 6, prompt: 'womens street skateboarding final in Paris Olympics 2024', imageUrl: 'https://replicate.delivery/yhqm/pNZ3A6l9B35dB9VxE0eGqkGfBGe401MjUttdOyzvpfWbEb6NB/out-0.webp' },
+    { 
+      id: 1, 
+      prompt: 'Photo of two beautiful lady having a tea party in a lush garden', 
+      imageUrl: '/gallery/image1.jpg' // 使用本地图片
+    },
+    { 
+      id: 2, 
+      prompt: 'portrait of a rugged middle-aged man, sharp blue eyes, wavy messy hair, thick beard with touches of gray, wearing casual shirt, cinematic natural lighting, ultra realistic, detailed skin texture, intense gaze.', 
+      imageUrl: '/gallery/image2.jpg' // 使用本地图片
+    },
+    { 
+      id: 3, 
+      prompt: 'Realistic photo of a cat as a pirate, everyday photo on a ship, complex chaotic scene with many details', 
+      imageUrl: '/gallery/image3.jpg' // 使用本地图片
+    },
+    { 
+      id: 4, 
+      prompt: 'a tiny astronaut hatching from an egg on the moon', 
+      imageUrl: 'https://images.unsplash.com/photo-1682687982501-1e58ab814714?w=800&h=800&fit=crop' 
+    },
+    { 
+      id: 5, 
+      prompt: 'black forest gateau cake spelling out the words "FLUX SCHNELL", tasty, food photography, dynamic shot', 
+      imageUrl: 'https://images.unsplash.com/photo-1624353365286-3f8d62daad51?w=800&h=800&fit=crop' 
+    },
+    { 
+      id: 6, 
+      prompt: 'womens street skateboarding final in Paris Olympics 2024', 
+      imageUrl: 'https://images.unsplash.com/photo-1682687981998-6b7b4b7d8c8f?w=800&h=800&fit=crop' 
+    },
   ]
 
   const filteredGallery = galleryItems // Removed activeTab filtering as per request to remove categories
