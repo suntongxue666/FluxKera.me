@@ -88,6 +88,7 @@ export default function AIGenerator() {
           num_steps: settings.num_steps,
           seed: settings.seed
         }),
+        credentials: 'include' // 确保包含认证cookies
       })
       
       const data = await response.json()
