@@ -37,6 +37,8 @@ export async function GET(request: NextRequest) {
         
         if (!supabaseUrl || !supabaseServiceKey) {
           console.error('Missing Supabase environment variables')
+          console.error('NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl)
+          console.error('SUPABASE_SERVICE_KEY:', supabaseServiceKey ? 'SET' : 'NOT SET')
           return NextResponse.redirect(new URL('/?error=server_config', request.url))
         }
         
@@ -92,15 +94,24 @@ export async function GET(request: NextRequest) {
                 onConflict: 'id',
                 returning: 'representation'
               })
-              .select()
+            
+            // 单独处理select查询，因为upsert可能不返回数据
+            const { data: selectData, error: selectError } = await supabaseAdmin
+              .from('users')
+              .select('*')
+              .eq('id', user.id)
               .single()
             
             if (insertError) {
               console.error('Error creating user:', insertError)
               // 重定向到首页并携带错误参数
               return NextResponse.redirect(new URL('/?error=user_creation_failed', request.url))
+            } else if (selectError) {
+              console.error('Error selecting user after upsert:', selectError)
+              // 重定向到首页并携带错误参数
+              return NextResponse.redirect(new URL('/?error=user_selection_failed', request.url))
             } else {
-              console.log('User created/updated successfully:', insertData);
+              console.log('User created/updated successfully:', selectData);
               // 记录积分交易
               const { error: transactionError } = await supabaseAdmin
                 .from('credit_transactions')
@@ -130,13 +141,20 @@ export async function GET(request: NextRequest) {
                 updated_at: new Date().toISOString()
               })
               .eq('id', user.id)
-              .select()
+            
+            // 单独处理select查询
+            const { data: selectData, error: selectError } = await supabaseAdmin
+              .from('users')
+              .select('*')
+              .eq('id', user.id)
               .single()
             
             if (updateError) {
               console.error('Error updating user:', updateError)
+            } else if (selectError) {
+              console.error('Error selecting user after update:', selectError)
             } else {
-              console.log('User updated successfully:', updateData);
+              console.log('User updated successfully:', selectData);
             }
           }
         } catch (error) {
