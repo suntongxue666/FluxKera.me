@@ -14,6 +14,8 @@ export async function POST(request: NextRequest) {
     
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error('Missing Supabase environment variables')
+      console.error('NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl)
+      console.error('SUPABASE_SERVICE_KEY:', supabaseServiceKey ? 'SET' : 'NOT SET')
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
     }
     
