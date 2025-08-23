@@ -1,11 +1,28 @@
 'use client'
 
+import { useState, useRef, useEffect } from 'react'
 import { LogOut } from 'lucide-react'
 import { useUser } from '@/lib/user-context'
 import type { User } from '@/lib/auth'
 
 export default function UserStatus() {
   const { user, credits, loading: isLoading, signIn, signOut } = useUser()
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  // 处理点击外部关闭下拉菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   return (
     <div className="hidden md:flex items-center space-x-4">
@@ -19,27 +36,35 @@ export default function UserStatus() {
             </svg>
             <span className="font-medium">{credits}</span>
           </div>
-          <div className="relative group">
-            <div className="flex items-center cursor-pointer">
+          <div className="relative" ref={dropdownRef}>
+            <div 
+              className="flex items-center cursor-pointer"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            >
               <img 
                 src={user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || '')}&background=random`} 
                 alt="User Avatar" 
                 className="w-8 h-8 rounded-full object-cover"
               />
             </div>
-            <div className="absolute right-0 mt-2 w-48 bg-black bg-opacity-80 backdrop-blur-sm rounded-lg shadow-xl py-2 z-10 hidden group-hover:block transform transition-all duration-300 origin-top-right hover:block">
-              <div className="p-4 border-b border-gray-700">
-                <p className="text-white font-medium truncate">{user.email}</p>
-                <p className="text-gray-300 text-sm">Level: Free</p>
+            {isDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-black bg-opacity-80 backdrop-blur-sm rounded-lg shadow-xl py-2 z-10 transform transition-all duration-300 origin-top-right">
+                <div className="p-4 border-b border-gray-700">
+                  <p className="text-white font-medium truncate">{user.email}</p>
+                  <p className="text-gray-300 text-sm">Level: Free</p>
+                </div>
+                <button 
+                  onClick={() => {
+                    signOut()
+                    setIsDropdownOpen(false)
+                  }}
+                  className="flex items-center w-full px-4 py-2 text-left text-white hover:bg-white hover:bg-opacity-10 transition-colors"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </button>
               </div>
-              <button 
-                onClick={signOut}
-                className="flex items-center w-full px-4 py-2 text-left text-white hover:bg-white hover:bg-opacity-10 transition-colors"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </button>
-            </div>
+            )}
           </div>
         </div>
       ) : (

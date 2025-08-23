@@ -48,21 +48,34 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           // 如果获取用户数据失败，尝试从auth.user获取基本信息
           const authUser = session.user
           if (authUser) {
-            // 创建一个临时的用户对象，包含基本信息
-            const tempUser: User = {
-              id: authUser.id,
-              email: authUser.email || '',
-              google_id: authUser.user_metadata?.sub || '',
-              avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || null,
-              credits: 0,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }
-            setUser(tempUser)
-            setCredits(0)
-            
             // 尝试重新同步用户数据（在后台）
-            syncUserData(authUser)
+            await syncUserData(authUser)
+            
+            // 再次尝试获取用户数据
+            const { data: retryData, error: retryError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', authUser.id)
+              .single()
+            
+            if (retryData && !retryError) {
+              console.log('User data from database (retry):', retryData)
+              setUser(retryData as User)
+              setCredits(retryData.credits)
+            } else {
+              // 如果仍然失败，创建一个临时的用户对象，包含基本信息
+              const tempUser: User = {
+                id: authUser.id,
+                email: authUser.email || '',
+                google_id: authUser.user_metadata?.sub || '',
+                avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || null,
+                credits: 0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }
+              setUser(tempUser)
+              setCredits(0)
+            }
           }
         }
       } else {
@@ -100,14 +113,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         const userData = await response.json()
         console.log('User data synced successfully:', userData)
-        // 更新本地状态
-        setUser(userData.user)
-        setCredits(userData.user.credits)
+        return userData
       } else {
         console.error('Failed to sync user data:', response.statusText)
+        return null
       }
     } catch (error) {
       console.error('Error syncing user data:', error)
+      return null
     }
   }
 
@@ -173,7 +186,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           // 延迟一下再刷新用户信息，确保认证回调已完成
           setTimeout(async () => {
             await refreshUser()
-          }, 1000)
+          }, 1500)
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
           setCredits(0)
