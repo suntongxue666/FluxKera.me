@@ -96,6 +96,7 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 2. 创建数据库表 (见上方表结构)
 3. 配置 Google OAuth 认证
 4. 获取 API 密钥
+5. 应用数据库触发器 (见下方说明)
 
 ### 2. 配置 Replicate
 1. 注册 Replicate 账号
@@ -129,6 +130,22 @@ npm run build
 npm start
 ```
 
+### 数据库触发器配置
+
+为了确保用户在Google登录后能自动在我们自定义的`users`表中创建记录，需要在Supabase数据库中应用触发器。
+
+触发器SQL代码保存在项目根目录的 `supabase-trigger.sql` 文件中。
+
+您可以通过以下方式应用这个触发器：
+
+1. 登录到 [Supabase Dashboard](https://supabase.com/dashboard)
+2. 选择您的项目
+3. 进入 SQL Editor
+4. 复制 `supabase-trigger.sql` 文件中的内容
+5. 在 SQL Editor 中执行该SQL
+
+这个触发器会在用户通过Google登录后自动在`users`表中创建记录，并给予20个初始积分。
+
 ## 📄 许可证
 
 本项目基于 MIT 许可证开源。
@@ -143,5 +160,6 @@ npm start
 
 ## 📅 更新日志
 
+- 2025-08-23: 添加数据库触发器配置说明
 - 2025-08-21: 更新项目结构，修复Vercel部署配置
 - 2025-08-20: 初始部署到Vercel
