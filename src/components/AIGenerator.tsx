@@ -304,16 +304,6 @@ export default function AIGenerator() {
             )}
           </div>
         </div>
-
-        {/* Model Info */}
-        <div className="mt-12 text-center">
-          <div className="inline-flex items-center px-4 py-2 bg-white rounded-full shadow-sm">
-            <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-            <span className="text-sm text-gray-600">
-              Powered by <span className="font-semibold">FLUX.1 Krea</span> - 12B parameter model
-            </span>
-          </div>
-        </div>
       </div>
       
       {/* 登录模态框 */}
