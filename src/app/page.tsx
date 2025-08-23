@@ -164,9 +164,9 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState('all')
 
   const galleryItems = [
-    { id: 1, prompt: 'Photo of two beautiful lady having a tea party in a lush garden', imageUrl: 'https://replicate.delivery/xezq/dbf8JwqdSqTYUS5jeCpjnjaVJD7xH0mNjs72xKQf0s8JEewUB/out-0.webp' },
-    { id: 2, prompt: 'portrait of a rugged middle-aged man, sharp blue eyes, wavy messy hair, thick beard with touches of gray, wearing casual shirt, cinematic natural lighting, ultra realistic, detailed skin texture, intense gaze.', imageUrl: 'https://replicate.delivery/xezq/mc7jeifqNzuDzUZtffQTwXq63txWHMSxkliGlTPUYRdw58wUB/out-0.webp' },
-    { id: 3, prompt: 'Realistic photo of a cat as a pirate, everyday photo on a ship, complex chaotic scene with many details', imageUrl: 'https://replicate.delivery/xezq/aHyZYETbC27KGNotHxIxhxFXY7EJ7FfgWGq8iHad2r5joHmKA/out-0.webp' },
+    { id: 1, prompt: 'Photo of two beautiful lady having a tea party in a lush garden', imageUrl: 'https://black-forest-labs-flux-1-krea-dev.hf.space/gradio_api/file=/tmp/gradio/17f3f8d90d0ed2b11373aa2bf1d4ee9d32f146c63082393ad8759bb4205e6e01/image.webp' },
+    { id: 2, prompt: 'portrait of a rugged middle-aged man, sharp blue eyes, wavy messy hair, thick beard with touches of gray, wearing casual shirt, cinematic natural lighting, ultra realistic, detailed skin texture, intense gaze.', imageUrl: 'https://black-forest-labs-flux-1-krea-dev.hf.space/gradio_api/file=/tmp/gradio/b25a59ba6f012fbebb512aa9a8e87060402d98f4301e570df92936dfa78ddca8/image.webp' },
+    { id: 3, prompt: 'Realistic photo of a cat as a pirate, everyday photo on a ship, complex chaotic scene with many details', imageUrl: 'https://black-forest-labs-flux-1-krea-dev.hf.space/gradio_api/file=/tmp/gradio/7121049c73d63f9739ecbd9c201c5986f4faee88fabf61e911fe52ae44fd439c/image.webp' },
     { id: 4, prompt: 'a tiny astronaut hatching from an egg on the moon', imageUrl: 'https://replicate.delivery/yhqm/QeGlhr8w4CWefov8rFAozycqveU4anxkYuUVxANfolFP710bC/out-0.webp' },
     { id: 5, prompt: 'black forest gateau cake spelling out the words "FLUX SCHNELL", tasty, food photography, dynamic shot', imageUrl: 'https://replicate.delivery/yhqm/hcDDSNf633zeDUz9sWkKfaftcfJLWIvuhn9vfCFWmufxelmemA/out-0.webp' },
     { id: 6, prompt: 'womens street skateboarding final in Paris Olympics 2024', imageUrl: 'https://replicate.delivery/yhqm/pNZ3A6l9B35dB9VxE0eGqkGfBGe401MjUttdOyzvpfWbEb6NB/out-0.webp' },
