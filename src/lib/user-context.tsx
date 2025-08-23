@@ -28,10 +28,19 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = async () => {
     try {
       setLoading(true)
-      const { data: { session } } = await supabase.auth.getSession()
+      console.log('Refreshing user info...')
+      
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error('Error getting session:', sessionError)
+        setUser(null)
+        setCredits(0)
+        return
+      }
       
       if (session) {
-        console.log('Session user ID:', session.user.id)
+        console.log('Session found for user ID:', session.user.id)
         // 获取用户信息和积分
         const { data, error } = await supabase
           .from('users')
@@ -48,6 +57,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           // 如果获取用户数据失败，尝试从auth.user获取基本信息
           const authUser = session.user
           if (authUser) {
+            console.log('Auth user data:', authUser)
             // 尝试重新同步用户数据（在后台）
             await syncUserData(authUser)
             
@@ -63,6 +73,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
               setUser(retryData as User)
               setCredits(retryData.credits)
             } else {
+              console.error('Retry failed:', retryError)
               // 如果仍然失败，创建一个临时的用户对象，包含基本信息
               const tempUser: User = {
                 id: authUser.id,
@@ -96,6 +107,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // 同步用户数据的函数
   const syncUserData = async (authUser: any) => {
     try {
+      console.log('Syncing user data for:', authUser.id)
       // 调用API路由来同步用户数据
       const response = await fetch('/api/sync-user', {
         method: 'POST',
@@ -176,6 +188,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // 初始化和监听认证状态变化
   useEffect(() => {
+    console.log('UserProvider mounted, initializing...')
     // 页面加载时立即刷新用户信息
     refreshUser()
     
@@ -194,6 +207,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     )
     
     return () => {
+      console.log('UserProvider unmounting, cleaning up...')
       subscription.unsubscribe()
     }
   }, [])

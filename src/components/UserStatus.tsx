@@ -24,6 +24,13 @@ export default function UserStatus() {
     }
   }, [])
 
+  // 调试信息
+  useEffect(() => {
+    console.log('UserStatus - User state:', user)
+    console.log('UserStatus - Credits:', credits)
+    console.log('UserStatus - Loading:', isLoading)
+  }, [user, credits, isLoading])
+
   return (
     <div className="hidden md:flex items-center space-x-4">
       {isLoading ? (
