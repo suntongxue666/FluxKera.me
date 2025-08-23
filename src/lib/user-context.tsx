@@ -19,7 +19,10 @@ const UserContext = createContext<UserContextType | undefined>(undefined)
 
 // 上下文提供者组件
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const supabase = createClientComponentClient()
+  const supabase = createClientComponentClient({
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  })
   const [user, setUser] = useState<User | null>(null)
   const [credits, setCredits] = useState<number>(0)
   const [loading, setLoading] = useState(true)
