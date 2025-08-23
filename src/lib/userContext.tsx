@@ -48,6 +48,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           // 如果获取用户数据失败，尝试从auth.user获取基本信息
           const authUser = session.user
           if (authUser) {
+            // 尝试创建用户记录（在客户端可能因为RLS策略失败，但在服务端应该成功）
             setUser({
               id: authUser.id,
               email: authUser.email || '',
@@ -67,6 +68,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Error refreshing user:', error)
+      // 即使出现错误，也要确保状态被正确设置
+      setUser(null)
+      setCredits(0)
     } finally {
       setLoading(false)
     }
@@ -131,7 +135,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user.id)
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          await refreshUser()
+          // 延迟一下再刷新用户信息，确保认证回调已完成
+          setTimeout(async () => {
+            await refreshUser()
+          }, 1000)
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
           setCredits(0)
