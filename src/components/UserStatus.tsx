@@ -32,7 +32,7 @@ export default function UserStatus() {
   }, [user, credits, isLoading])
 
   return (
-    <div className="hidden md:flex items-center space-x-4">
+    <div className="flex items-center space-x-4">
       {isLoading ? (
         <div className="w-24 h-10 animate-pulse"></div>
       ) : user ? (
