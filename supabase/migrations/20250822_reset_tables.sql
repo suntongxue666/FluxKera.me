@@ -36,6 +36,11 @@ CREATE POLICY "用户只能插入自己的信息"
   ON users FOR INSERT 
   WITH CHECK (auth.uid() = id);
 
+-- 为服务端操作创建策略（允许服务端角色操作）
+CREATE POLICY "服务端可以操作所有用户数据" 
+  ON users FOR ALL 
+  USING (auth.role() = 'service_role');
+
 -- 创建简单的积分交易表（可选）
 CREATE TABLE credit_transactions (
   id SERIAL PRIMARY KEY,
@@ -52,3 +57,8 @@ ALTER TABLE credit_transactions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "用户只能查看自己的积分交易" 
   ON credit_transactions FOR SELECT 
   USING (auth.uid() = user_id);
+
+-- 为服务端操作创建策略（允许服务端角色操作）
+CREATE POLICY "服务端可以操作所有积分交易" 
+  ON credit_transactions FOR ALL 
+  USING (auth.role() = 'service_role');

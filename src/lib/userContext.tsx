@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { User } from './auth'
+import { createClient } from '@supabase/supabase-js'
 
 // 定义上下文类型
 interface UserContextType {
@@ -48,8 +49,19 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           // 如果获取用户数据失败，尝试从auth.user获取基本信息
           const authUser = session.user
           if (authUser) {
+            // 使用服务端密钥创建Supabase客户端，绕过RLS策略
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+            const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || ''
+            const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+              auth: {
+                persistSession: false,
+                autoRefreshToken: false,
+                detectSessionInUrl: false
+              }
+            })
+            
             // 尝试创建用户记录
-            const { data: userData, error: createError } = await supabase
+            const { data: userData, error: createError } = await supabaseAdmin
               .from('users')
               .upsert({
                 id: authUser.id,

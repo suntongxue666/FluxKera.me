@@ -2,6 +2,11 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+
+// 使用服务端密钥创建Supabase客户端，绕过RLS策略
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || ''
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -29,10 +34,19 @@ export async function GET(request: NextRequest) {
     if (user) {
       console.log('Authenticated user:', user)
       
+      // 使用服务端客户端绕过RLS策略
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false
+        }
+      })
+      
       try {
         // 检查用户是否已存在
         console.log('Checking if user exists in database...');
-        const { data: existingUser, error: fetchError } = await supabase
+        const { data: existingUser, error: fetchError } = await supabaseAdmin
           .from('users')
           .select('*')
           .eq('id', user.id)
@@ -59,8 +73,8 @@ export async function GET(request: NextRequest) {
             credits: 20
           });
           
-          // 简化用户创建逻辑，移除不存在的full_name字段
-          const { data: insertData, error: insertError } = await supabase
+          // 使用服务端客户端创建用户
+          const { data: insertData, error: insertError } = await supabaseAdmin
             .from('users')
             .upsert({
               id: user.id,
@@ -85,7 +99,7 @@ export async function GET(request: NextRequest) {
             console.log('User created/updated successfully:', insertData);
             finalUserdata = insertData;
             // 记录积分交易
-            const { error: transactionError, data: transactionData } = await supabase
+            const { error: transactionError, data: transactionData } = await supabaseAdmin
               .from('credit_transactions')
               .insert({
                 user_id: user.id,
@@ -105,8 +119,8 @@ export async function GET(request: NextRequest) {
         } else {
           // 更新现有用户信息
           console.log('Updating existing user...');
-          // 简化用户更新逻辑，移除不存在的full_name字段
-          const { data: updateData, error: updateError } = await supabase
+          // 使用服务端客户端更新用户
+          const { data: updateData, error: updateError } = await supabaseAdmin
             .from('users')
             .update({
               email: user.email || '',
