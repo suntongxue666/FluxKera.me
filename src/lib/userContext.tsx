@@ -48,8 +48,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           // 如果获取用户数据失败，尝试从auth.user获取基本信息
           const authUser = session.user
           if (authUser) {
-            // 尝试创建用户记录（在客户端可能因为RLS策略失败，但在服务端应该成功）
-            setUser({
+            // 创建一个临时的用户对象，包含基本信息
+            const tempUser: User = {
               id: authUser.id,
               email: authUser.email || '',
               google_id: authUser.user_metadata?.sub || '',
@@ -57,8 +57,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
               credits: 0,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
-            } as User)
+            }
+            setUser(tempUser)
             setCredits(0)
+            
+            // 尝试重新同步用户数据（在后台）
+            syncUserData(authUser)
           }
         }
       } else {
@@ -73,6 +77,37 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       setCredits(0)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // 同步用户数据的函数
+  const syncUserData = async (authUser: any) => {
+    try {
+      // 调用API路由来同步用户数据
+      const response = await fetch('/api/sync-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: authUser.id,
+          email: authUser.email,
+          google_id: authUser.user_metadata?.sub,
+          avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture,
+        }),
+      })
+      
+      if (response.ok) {
+        const userData = await response.json()
+        console.log('User data synced successfully:', userData)
+        // 更新本地状态
+        setUser(userData.user)
+        setCredits(userData.user.credits)
+      } else {
+        console.error('Failed to sync user data:', response.statusText)
+      }
+    } catch (error) {
+      console.error('Error syncing user data:', error)
     }
   }
 
