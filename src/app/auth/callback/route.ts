@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
               id: user.id,
               email: user.email || '',
               google_id: user.user_metadata?.sub || user.id,
-              avatar_url: user.user_metadata?.avatar_url || null,
+              avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
               credits: 20
             });
             
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
                 id: user.id,
                 email: user.email || '',
                 google_id: user.user_metadata?.sub || user.id,
-                avatar_url: user.user_metadata?.avatar_url || null,
+                avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
                 credits: 20, // 新用户或重置用户获得20积分
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
               .from('users')
               .update({
                 email: user.email || '',
-                avatar_url: user.user_metadata?.avatar_url || null,
+                avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
                 updated_at: new Date().toISOString()
               })
               .eq('id', user.id)
