@@ -1,4 +1,5 @@
 import { UserProvider } from '@/lib/user-context'
+import Header from '@/components/Header'
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
@@ -19,6 +20,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <UserProvider>
+          <Header />
           {children}
         </UserProvider>
       </body>
