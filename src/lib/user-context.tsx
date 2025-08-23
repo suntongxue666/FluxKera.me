@@ -28,18 +28,22 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = async () => {
     try {
       setLoading(true)
-      console.log('Refreshing user info...')
+      console.log('=== REFRESH USER START ===')
       
+      // 获取会话
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      console.log('Session data:', session)
+      console.log('Session error:', sessionError)
       
       if (sessionError) {
         console.error('Error getting session:', sessionError)
         setUser(null)
         setCredits(0)
+        setLoading(false)
         return
       }
       
-      if (session) {
+      if (session && session.user) {
         console.log('Session found for user ID:', session.user.id)
         // 获取用户信息和积分
         const { data, error } = await supabase
@@ -47,6 +51,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           .select('*')
           .eq('id', session.user.id)
           .single()
+        
+        console.log('Database user data:', data)
+        console.log('Database user error:', error)
         
         if (data && !error) {
           console.log('User data from database:', data)
@@ -67,6 +74,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
               .select('*')
               .eq('id', authUser.id)
               .single()
+            
+            console.log('Retry data:', retryData)
+            console.log('Retry error:', retryError)
             
             if (retryData && !retryError) {
               console.log('User data from database (retry):', retryData)
@@ -90,7 +100,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } else {
-        console.log('No session found')
+        console.log('No session found - user is not logged in')
         setUser(null)
         setCredits(0)
       }
@@ -100,6 +110,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       setUser(null)
       setCredits(0)
     } finally {
+      console.log('=== REFRESH USER END ===')
       setLoading(false)
     }
   }
@@ -178,6 +189,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // 登出方法
   const signOut = async () => {
     try {
+      console.log('Signing out...')
       await supabase.auth.signOut()
       setUser(null)
       setCredits(0)
@@ -188,18 +200,24 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // 初始化和监听认证状态变化
   useEffect(() => {
-    console.log('UserProvider mounted, initializing...')
+    console.log('=== USER PROVIDER MOUNTED ===')
+    
     // 页面加载时立即刷新用户信息
     refreshUser()
     
     // 监听认证状态变化
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user.id)
+        console.log('=== AUTH STATE CHANGED ===')
+        console.log('Event:', event)
+        console.log('Session:', session)
+        
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          console.log('User signed in or token refreshed')
           // 立即刷新用户信息
           await refreshUser()
         } else if (event === 'SIGNED_OUT') {
+          console.log('User signed out')
           setUser(null)
           setCredits(0)
         }
@@ -207,10 +225,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     )
     
     return () => {
-      console.log('UserProvider unmounting, cleaning up...')
+      console.log('=== USER PROVIDER UNMOUNTING ===')
       subscription.unsubscribe()
     }
   }, [])
+
+  // 添加一个useEffect来调试状态变化
+  useEffect(() => {
+    console.log('=== USER STATE CHANGED ===')
+    console.log('User:', user)
+    console.log('Credits:', credits)
+    console.log('Loading:', loading)
+  }, [user, credits, loading])
 
   return (
     <UserContext.Provider value={{ user, credits, loading, refreshUser, signIn, signOut }}>

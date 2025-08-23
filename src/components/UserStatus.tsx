@@ -26,15 +26,16 @@ export default function UserStatus() {
 
   // 调试信息
   useEffect(() => {
-    console.log('UserStatus - User state:', user)
-    console.log('UserStatus - Credits:', credits)
-    console.log('UserStatus - Loading:', isLoading)
-  }, [user, credits, isLoading])
+    console.log('=== USER STATUS RENDER ===')
+    console.log('User state:', user)
+    console.log('Credits:', credits)
+    console.log('Loading:', isLoading)
+  })
 
   return (
     <div className="flex items-center space-x-4">
       {isLoading ? (
-        <div className="w-24 h-10 animate-pulse"></div>
+        <div className="w-24 h-10 animate-pulse bg-gray-200 rounded"></div>
       ) : user ? (
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
@@ -52,6 +53,11 @@ export default function UserStatus() {
                 src={user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || '')}&background=random`} 
                 alt="User Avatar" 
                 className="w-8 h-8 rounded-full object-cover"
+                onError={(e) => {
+                  console.log('Avatar image failed to load, using fallback')
+                  const target = e.target as HTMLImageElement
+                  target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || '')}&background=random`
+                }}
               />
             </div>
             {isDropdownOpen && (
