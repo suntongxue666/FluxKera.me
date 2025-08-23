@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateImage, validateParams, normalizeParams, getEstimatedTime } from '@/lib/replicate'
 import { supabase } from '@/lib/supabase'
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 export async function POST(request: NextRequest) {
@@ -50,18 +50,27 @@ export async function POST(request: NextRequest) {
           get(name: string) {
             return cookieStore.get(name)?.value
           },
-          set(name: string, value: string, options: any) {
+          set(name: string, value: string, options: CookieOptions) {
             cookieStore.set({ name, value, ...options })
           },
-          remove(name: string, options: any) {
-            cookieStore.set({ name, value: '', ...options })
+          remove(name: string, options: CookieOptions) {
+            cookieStore.delete({ name, ...options })
           },
         },
       }
     )
     
     // 检查用户是否已登录
-    const { data: { session } } = await supabaseServer.auth.getSession()
+    const { data: { session }, error: sessionError } = await supabaseServer.auth.getSession()
+    
+    if (sessionError) {
+      console.error('Session error:', sessionError)
+      return NextResponse.json(
+        { success: false, error: 'Authentication error' },
+        { status: 500 }
+      )
+    }
+    
     if (!session) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -77,6 +86,7 @@ export async function POST(request: NextRequest) {
       .single()
       
     if (userError || !user) {
+      console.error('User fetch error:', userError)
       return NextResponse.json(
         { success: false, error: 'User not found' },
         { status: 404 }
