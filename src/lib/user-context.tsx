@@ -43,6 +43,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       if (!session?.user) {
         console.log('No session found yet - keep waiting for SIGNED_IN event')
         // 🚩 关键：不结束 loading，等 onAuthStateChange 事件来触发
+        // 但是设置一个超时，避免永远loading
+        setTimeout(() => {
+          console.log('Timeout: No session found after 5 seconds, ending loading')
+          setLoading(false)
+        }, 5000)
         return
       }
 
