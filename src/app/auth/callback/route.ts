@@ -27,10 +27,12 @@ export async function GET(request: NextRequest) {
       if (user) {
         // 检查环境变量
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-        const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY
+        const supabaseServiceKey = process.env.SUPABASE_SERVICE_SECRET || process.env.SUPABASE_SERVICE_KEY
         
         if (!supabaseUrl || !supabaseServiceKey) {
           console.error('Missing Supabase environment variables')
+          console.error('NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl)
+          console.error('SUPABASE_SERVICE_KEY:', supabaseServiceKey ? 'SET' : 'NOT SET')
           return NextResponse.redirect(new URL('/?error=server_config', request.url))
         }
         
