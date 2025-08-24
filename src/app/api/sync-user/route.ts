@@ -35,9 +35,11 @@ export async function POST(request: NextRequest) {
       .eq('id', id)
       .single()
     
+    console.log('Fetch user result:', { existingUser, fetchError })
+    
     if (fetchError && fetchError.code !== 'PGRST116') {
       console.error('Error fetching user:', fetchError)
-      return NextResponse.json({ error: 'Database error' }, { status: 500 })
+      return NextResponse.json({ error: 'Database error fetching user: ' + fetchError.message }, { status: 500 })
     }
     
     // 如果用户不存在，创建新用户
