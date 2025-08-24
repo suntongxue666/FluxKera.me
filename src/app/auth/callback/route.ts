@@ -21,10 +21,14 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(new URL('/?error=auth_failed', request.url))
       }
       
+      console.log('Session exchanged successfully:', data)
+      
       // 获取当前用户
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {
+        console.log('Authenticated user:', user)
+        
         // 检查环境变量
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_SECRET || process.env.SUPABASE_SERVICE_KEY
@@ -47,11 +51,21 @@ export async function GET(request: NextRequest) {
             .eq('id', user.id)
             .single()
           
+          console.log('Existing user check:', existingUser, fetchError)
+          
           // 检查是否为内测账号需要重置
           const isResetUser = user.email === 'sunwei7482@gmail.com' || user.email === 'tiktreeapp@gmail.com';
           
           // 如果用户不存在或为内测账号需要重置，创建新用户并给予初始积分
           if (!existingUser || isResetUser) {
+            console.log('Creating/updating user:', {
+              id: user.id,
+              email: user.email || '',
+              google_id: user.user_metadata?.sub || user.id,
+              avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+              credits: 20
+            });
+            
             // 使用服务端客户端创建用户
             const { data: userData, error: upsertError } = await supabaseAdmin
               .from('users')
@@ -74,6 +88,8 @@ export async function GET(request: NextRequest) {
               return NextResponse.redirect(new URL('/?error=user_creation_failed', request.url))
             }
             
+            console.log('User created/updated:', userData)
+            
             // 记录积分交易
             const { error: transactionError } = await supabaseAdmin
               .from('credit_transactions')
@@ -90,6 +106,11 @@ export async function GET(request: NextRequest) {
             }
           } else {
             // 更新现有用户信息
+            console.log('Updating existing user:', {
+              email: user.email || '',
+              avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null
+            });
+            
             const { error: updateError } = await supabaseAdmin
               .from('users')
               .update({
@@ -101,6 +122,8 @@ export async function GET(request: NextRequest) {
             
             if (updateError) {
               console.error('Error updating user:', updateError)
+            } else {
+              console.log('User updated successfully')
             }
           }
         } catch (error) {
@@ -115,5 +138,6 @@ export async function GET(request: NextRequest) {
   }
 
   // 重定向回首页，带上成功标识
+  console.log('Redirecting to home page with auth success')
   return NextResponse.redirect(new URL('/?auth=success', request.url))
 }

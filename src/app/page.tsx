@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useId } from 'react'
+import { useState, useId, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Zap, Sparkles, Users, ArrowRight, Check, Download, Star } from 'lucide-react'
 import AIGenerator from '@/components/AIGenerator'
+import { useUser } from '@/lib/user-context'
 
 // Inline styles to ensure basic styling works
 const styles = {
@@ -162,6 +163,21 @@ const styles = {
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState('all')
+  const { refreshUser } = useUser()
+
+  // 处理认证成功后的参数
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const authSuccess = urlParams.get('auth')
+    
+    if (authSuccess === 'success') {
+      console.log('Auth success detected, refreshing user data...')
+      // 刷新用户数据
+      refreshUser()
+      // 移除URL参数
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+  }, [refreshUser])
 
   // 使用本地图片或者更稳定的图片URL
   const galleryItems = [
