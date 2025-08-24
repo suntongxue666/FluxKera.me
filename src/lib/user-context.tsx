@@ -41,8 +41,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
       // 🚩 关键修改：如果 session 还没有恢复，就不清空 user，保持 loading=true
       if (!session?.user) {
-        console.log('No session found yet - waiting for auth state change')
-        return
+        console.log('No session found yet - keep loading, wait for SIGNED_IN event')
+        return  // ⚠️ 不要走到 finally
       }
 
       console.log('Session found for user ID:', session.user.id)
@@ -104,8 +104,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       setUser(null)
       setCredits(0)
     } finally {
-      console.log('=== REFRESH USER END ===')
-      setLoading(false)
+      // ⚠️ 关键修改：只有在有session时才设置loading=false
+      if (session?.user) {
+        console.log('=== REFRESH USER END ===')
+        setLoading(false)
+      }
     }
   }
 
