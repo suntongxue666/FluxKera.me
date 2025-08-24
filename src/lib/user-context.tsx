@@ -77,9 +77,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           setCredits(0)
         }
       } else {
-        console.log('No session found - user is not logged in')
-        setUser(null)
-        setCredits(0)
+        console.log('No session found yet - waiting for auth state change')
+        // 🚫 不要立刻清空 user，让 loading 保持 true
+        return
       }
     } catch (err) {
       console.error('Error refreshing user:', err)

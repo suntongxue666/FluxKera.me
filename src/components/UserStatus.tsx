@@ -24,15 +24,16 @@ export default function UserStatus() {
     }
   }, [])
 
-  // 加载中：显示灰色骨架 (96x40px)
+  // UI 层用 loading 来区分
   if (isLoading) {
+    // loading === true → skeleton（96x40px 灰色块，带动画）
     return (
       <div className="w-[96px] h-[40px] bg-gray-200 rounded-lg animate-pulse" />
     )
   }
 
-  // 未登录：显示 Sign in 按钮
   if (!user) {
+    // !loading && !user → Sign in 按钮
     return (
       <button
         onClick={signIn}
@@ -49,7 +50,7 @@ export default function UserStatus() {
     )
   }
 
-  // 已登录：显示头像 + 积分 + 下拉菜单
+  // !loading && user → 显示头像 + 积分
   return (
     <div className="flex items-center space-x-4">
       <div className="flex items-center space-x-2">
