@@ -204,6 +204,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     console.log('=== USER PROVIDER MOUNTED ===')
     
+    // 检查URL参数，如果来自认证回调，强制刷新用户信息
+    const urlParams = new URLSearchParams(window.location.search)
+    const authSuccess = urlParams.get('auth')
+    
+    if (authSuccess === 'success') {
+      console.log('Auth callback detected, refreshing user info...')
+      // 移除URL参数
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+    
     // 页面加载时立即刷新用户信息
     refreshUser()
     

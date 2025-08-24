@@ -112,6 +112,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // 重定向回首页
-  return NextResponse.redirect(new URL('/', request.url))
+  // 重定向回首页，带上成功标识
+  return NextResponse.redirect(new URL('/?auth=success', request.url))
 }
