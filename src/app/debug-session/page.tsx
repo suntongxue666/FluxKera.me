@@ -1,108 +1,50 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useUser } from '@/lib/user-context'
+import { useEffect } from 'react'
 
 export default function DebugSession() {
-  const [session, setSession] = useState(null)
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  const supabase = createClientComponentClient()
+  const { user, credits, loading, refreshUser } = useUser()
 
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        console.log('Checking session...')
-        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
-        console.log('Session result:', currentSession, sessionError)
-        
-        if (sessionError) {
-          setError(sessionError.message)
-          setLoading(false)
-          return
-        }
-        
-        setSession(currentSession)
-        
-        if (currentSession && currentSession.user) {
-          console.log('User from session:', currentSession.user)
-          setUser(currentSession.user)
-          
-          // 尝试获取数据库中的用户数据
-          const { data: dbUser, error: dbError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', currentSession.user.id)
-            .single()
-          
-          console.log('Database user:', dbUser, dbError)
-        }
-      } catch (err) {
-        console.error('Error checking session:', err)
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    checkSession()
-  }, [])
-
-  if (loading) {
-    return <div className="p-4">Loading session data...</div>
-  }
-
-  if (error) {
-    return <div className="p-4 text-red-500">Error: {error}</div>
-  }
+    console.log('=== DEBUG SESSION PAGE ===')
+    console.log('User:', user)
+    console.log('Credits:', credits)
+    console.log('Loading:', loading)
+  }, [user, credits, loading])
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Session Debug Info</h1>
-      
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold">Session Status:</h2>
-        {session ? (
-          <div className="bg-green-100 p-2 rounded">
-            <p>✅ Session exists</p>
-            <p>User ID: {session.user?.id}</p>
-            <p>User Email: {session.user?.email}</p>
+    <div className="min-h-screen bg-gray-100 py-12">
+      <div className="max-w-4xl mx-auto px-4">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Debug Session</h1>
+        
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">Session Status</h2>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Loading</p>
+              <p className="text-lg">{loading ? 'true' : 'false'}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">User</p>
+              <pre className="text-lg bg-gray-100 p-2 rounded">
+                {user ? JSON.stringify(user, null, 2) : 'null'}
+              </pre>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Credits</p>
+              <p className="text-lg">{credits}</p>
+            </div>
           </div>
-        ) : (
-          <div className="bg-red-100 p-2 rounded">
-            <p>❌ No session found</p>
-          </div>
-        )}
+        </div>
+        
+        <button 
+          onClick={refreshUser}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Refresh User Data
+        </button>
       </div>
-      
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold">User Data:</h2>
-        {user ? (
-          <div className="bg-blue-100 p-2 rounded">
-            <pre>{JSON.stringify(user, null, 2)}</pre>
-          </div>
-        ) : (
-          <div className="bg-gray-100 p-2 rounded">
-            <p>No user data</p>
-          </div>
-        )}
-      </div>
-      
-      <button 
-        onClick={async () => {
-          const { error } = await supabase.auth.signOut()
-          if (error) {
-            console.error('Sign out error:', error)
-          } else {
-            window.location.reload()
-          }
-        }}
-        className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-      >
-        Sign Out
-      </button>
     </div>
   )
 }
