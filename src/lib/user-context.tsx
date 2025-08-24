@@ -31,6 +31,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       console.log('=== REFRESH USER START ===')
 
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
       if (sessionError) {
         console.error('Error getting session:', sessionError)
         setUser(null)
@@ -38,87 +39,73 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         return
       }
 
-      if (session?.user) {
-        console.log('Session found for user ID:', session.user.id)
-
-        // 从 users 表查
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-
-        if (data && !error) {
-          setUser(data as User)
-          setCredits(data.credits)
-          return
-        }
-
-        // ⚠️ 数据库里没有用户 → 强制写入
-        console.warn('User not found in users table, syncing...')
-        const synced = await syncUserData(session.user)
-
-        if (synced?.user) {
-          setUser(synced.user as User)
-          setCredits(synced.user.credits)
-        } else {
-          // 最后兜底
-          const authUser = session.user
-          const tempUser: User = {
-            id: authUser.id,
-            email: authUser.email || '',
-            google_id: authUser.user_metadata?.sub || '',
-            avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || null,
-            credits: 0,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-          setUser(tempUser)
-          setCredits(0)
-        }
-      } else {
+      // 🚩 关键修改：如果 session 还没有恢复，就不清空 user，保持 loading=true
+      if (!session?.user) {
         console.log('No session found yet - waiting for auth state change')
-        // 🚫 不要立刻清空 user，让 loading 保持 true
         return
       }
+
+      console.log('Session found for user ID:', session.user.id)
+
+      // 从 users 表查
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', session.user.id)
+        .single()
+
+      if (data && !error) {
+        console.log('User data from database:', data)
+        setUser(data as User)
+        setCredits(data.credits)
+        return
+      }
+
+      // ⚠️ 数据库里没有用户 → 强制写入
+      console.warn('User not found in users table, syncing...')
+      const response = await fetch('/api/sync-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: session.user.id,
+          email: session.user.email,
+          google_id: session.user.user_metadata?.sub,
+          avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
+        }),
+      })
+
+      if (response.ok) {
+        const { user: syncedUser } = await response.json()
+        if (syncedUser) {
+          console.log('User synced into DB:', syncedUser)
+          setUser(syncedUser as User)
+          setCredits(syncedUser.credits)
+          return
+        }
+      } else {
+        console.error('Failed to sync user data:', await response.text())
+      }
+
+      // 兜底逻辑：至少有个临时用户对象，避免 UI 崩溃
+      const authUser = session.user
+      const tempUser: User = {
+        id: authUser.id,
+        email: authUser.email || '',
+        google_id: authUser.user_metadata?.sub || '',
+        avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || null,
+        credits: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      setUser(tempUser)
+      setCredits(0)
     } catch (err) {
       console.error('Error refreshing user:', err)
       setUser(null)
       setCredits(0)
     } finally {
+      console.log('=== REFRESH USER END ===')
       setLoading(false)
-    }
-  }
-
-  // 同步用户数据的函数
-  const syncUserData = async (authUser: any) => {
-    try {
-      console.log('Syncing user data for:', authUser.id)
-      // 调用API路由来同步用户数据
-      const response = await fetch('/api/sync-user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: authUser.id,
-          email: authUser.email,
-          google_id: authUser.user_metadata?.sub,
-          avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture,
-        }),
-      })
-      
-      if (response.ok) {
-        const userData = await response.json()
-        console.log('User data synced successfully:', userData)
-        return userData
-      } else {
-        console.error('Failed to sync user data:', response.statusText)
-        return null
-      }
-    } catch (error) {
-      console.error('Error syncing user data:', error)
-      return null
     }
   }
 

@@ -7,33 +7,17 @@ import type { User } from '@/lib/auth'
 
 export default function UserStatus() {
   const { user, credits, loading: isLoading, signIn, signOut } = useUser()
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // 处理点击外部关闭下拉菜单
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
-
-  // UI 层用 loading 来区分
+  // UI 必须改成三态
   if (isLoading) {
-    // loading === true → skeleton（96x40px 灰色块，带动画）
+    // loading状态：显示骨架屏
     return (
       <div className="w-[96px] h-[40px] bg-gray-200 rounded-lg animate-pulse" />
     )
   }
 
   if (!user) {
-    // !loading && !user → Sign in 按钮
+    // 未登录状态：显示登录按钮
     return (
       <button
         onClick={signIn}
@@ -50,50 +34,26 @@ export default function UserStatus() {
     )
   }
 
-  // !loading && user → 显示头像 + 积分
+  // 已登录状态：显示用户信息
   return (
-    <div className="flex items-center space-x-4">
-      <div className="flex items-center space-x-2">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13.5v6.5h2v-6.5h-2zm0 8.5v2h2v-2h-2z"/>
-        </svg>
-        <span className="font-medium">{credits}</span>
-      </div>
-      <div className="relative" ref={dropdownRef}>
-        <div 
-          className="flex items-center cursor-pointer"
-          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        >
-          <img 
-            src={user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || '')}&background=random`} 
-            alt="User Avatar" 
-            className="w-8 h-8 rounded-full object-cover"
-            onError={(e) => {
-              console.log('Avatar image failed to load, using fallback')
-              const target = e.target as HTMLImageElement
-              target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || '')}&background=random`
-            }}
-          />
-        </div>
-        {isDropdownOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-black bg-opacity-80 backdrop-blur-sm rounded-lg shadow-xl py-2 z-10 transform transition-all duration-300 origin-top-right">
-            <div className="p-4 border-b border-gray-700">
-              <p className="text-white font-medium truncate">{user.email}</p>
-              <p className="text-gray-300 text-sm">Level: Free</p>
-            </div>
-            <button 
-              onClick={() => {
-                signOut()
-                setIsDropdownOpen(false)
-              }}
-              className="flex items-center w-full px-4 py-2 text-left text-white hover:bg-white hover:bg-opacity-10 transition-colors"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </button>
-          </div>
-        )}
-      </div>
+    <div className="flex items-center gap-3">
+      <img 
+        src={user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || '')}&background=random`} 
+        alt="User Avatar" 
+        className="w-8 h-8 rounded-full object-cover"
+        onError={(e) => {
+          console.log('Avatar image failed to load, using fallback')
+          const target = e.target as HTMLImageElement
+          target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email || '')}&background=random`
+        }}
+      />
+      <span className="font-medium">{credits} 积分</span>
+      <button 
+        onClick={signOut}
+        className="text-sm text-gray-500 hover:text-gray-700"
+      >
+        退出
+      </button>
     </div>
   )
 }
