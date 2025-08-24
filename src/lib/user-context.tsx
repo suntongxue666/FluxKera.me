@@ -104,11 +104,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       setUser(null)
       setCredits(0)
     } finally {
-      // ⚠️ 关键修改：只有在有session时才设置loading=false
-      if (session?.user) {
-        console.log('=== REFRESH USER END ===')
-        setLoading(false)
-      }
+      // 🚩 关键修复：确保在所有情况下都设置loading=false
+      console.log('=== REFRESH USER END ===')
+      setLoading(false)
     }
   }
 
