@@ -36,18 +36,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         console.error('Error getting session:', sessionError)
         setUser(null)
         setCredits(0)
+        setLoading(false)
         return
       }
 
-      // 🚩 关键修改：如果 session 还没有恢复，就不清空 user，保持 loading=true
       if (!session?.user) {
-        console.log('No session found yet - keep loading, wait for SIGNED_IN event')
-        return  // ⚠️ 不要走到 finally
+        console.log('No session found yet - keep waiting for SIGNED_IN event')
+        // 🚩 关键：不结束 loading，等 onAuthStateChange 事件来触发
+        return
       }
 
       console.log('Session found for user ID:', session.user.id)
 
-      // 从 users 表查
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -58,10 +58,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         console.log('User data from database:', data)
         setUser(data as User)
         setCredits(data.credits)
+        setLoading(false)   // ✅ 成功获取用户 → 结束 loading
         return
       }
 
-      // ⚠️ 数据库里没有用户 → 强制写入
       console.warn('User not found in users table, syncing...')
       const response = await fetch('/api/sync-user', {
         method: 'POST',
@@ -77,35 +77,30 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         const { user: syncedUser } = await response.json()
         if (syncedUser) {
-          console.log('User synced into DB:', syncedUser)
           setUser(syncedUser as User)
           setCredits(syncedUser.credits)
+          setLoading(false)   // ✅ 成功获取用户 → 结束 loading
           return
         }
-      } else {
-        console.error('Failed to sync user data:', await response.text())
       }
 
-      // 兜底逻辑：至少有个临时用户对象，避免 UI 崩溃
-      const authUser = session.user
-      const tempUser: User = {
-        id: authUser.id,
-        email: authUser.email || '',
-        google_id: authUser.user_metadata?.sub || '',
-        avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || null,
+      // fallback
+      setUser({
+        id: session.user.id,
+        email: session.user.email || '',
+        google_id: session.user.user_metadata?.sub || '',
+        avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null,
         credits: 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      }
-      setUser(tempUser)
+      })
       setCredits(0)
+      setLoading(false)
+
     } catch (err) {
       console.error('Error refreshing user:', err)
       setUser(null)
       setCredits(0)
-    } finally {
-      // 🚩 关键修复：确保在所有情况下都设置loading=false
-      console.log('=== REFRESH USER END ===')
       setLoading(false)
     }
   }

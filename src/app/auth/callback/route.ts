@@ -8,22 +8,28 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
 
+  console.log('=== AUTH CALLBACK START ===')
+  console.log('Code:', code ? 'present' : 'missing')
+  console.log('Request URL:', request.url)
+
   if (code) {
     const cookieStore = cookies()
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
     
     try {
       // 交换授权码获取会话
+      console.log('Exchanging code for session...')
       const { data, error } = await supabase.auth.exchangeCodeForSession(code)
       
       if (error) {
         console.error('Error exchanging code for session:', error)
-        return NextResponse.redirect(new URL('/?error=auth_failed', request.url))
+        return NextResponse.redirect(new URL('/?error=auth_failed&message=' + encodeURIComponent(error.message), request.url))
       }
       
       console.log('Session exchanged successfully:', data)
       
       // 获取当前用户
+      console.log('Getting user info...')
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {
@@ -45,6 +51,7 @@ export async function GET(request: NextRequest) {
         
         try {
           // 检查用户是否已存在
+          console.log('Checking if user exists in database...')
           const { data: existingUser, error: fetchError } = await supabaseAdmin
             .from('users')
             .select('*')
@@ -85,7 +92,7 @@ export async function GET(request: NextRequest) {
             
             if (upsertError) {
               console.error('Error creating user:', upsertError)
-              return NextResponse.redirect(new URL('/?error=user_creation_failed', request.url))
+              return NextResponse.redirect(new URL('/?error=user_creation_failed&message=' + encodeURIComponent(upsertError.message), request.url))
             }
             
             console.log('User created/updated:', userData)
@@ -128,13 +135,17 @@ export async function GET(request: NextRequest) {
           }
         } catch (error) {
           console.error('Unexpected error during user creation/update:', error)
-          return NextResponse.redirect(new URL('/?error=server_error', request.url))
+          return NextResponse.redirect(new URL('/?error=server_error&message=' + encodeURIComponent((error as Error).message), request.url))
         }
+      } else {
+        console.log('No user found after session exchange')
       }
     } catch (error) {
       console.error('Unexpected error in auth callback:', error)
-      return NextResponse.redirect(new URL('/?error=unexpected_error', request.url))
+      return NextResponse.redirect(new URL('/?error=unexpected_error&message=' + encodeURIComponent((error as Error).message), request.url))
     }
+  } else {
+    console.log('No code found in callback')
   }
 
   // 重定向回首页，带上成功标识
