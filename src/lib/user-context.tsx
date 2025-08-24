@@ -39,6 +39,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         console.error('Error getting session:', sessionError)
         setUser(null)
         setCredits(0)
+        setLoading(false)
         return
       }
       
@@ -60,30 +61,19 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           setCredits(data.credits)
         } else {
           console.error('Error fetching user data from database:', error)
-          // 如果获取用户数据失败，尝试从auth.user获取基本信息
+          // 如果获取用户数据失败，尝试从auth.user获取基本信息并同步到数据库
           const authUser = session.user
           if (authUser) {
             console.log('Auth user data:', authUser)
-            // 尝试重新同步用户数据（在后台）
-            await syncUserData(authUser)
+            // 强制调用 syncUserData，把用户写进数据库
+            const syncedUser = await syncUserData(authUser)
             
-            // 再次尝试获取用户数据
-            const { data: retryData, error: retryError } = await supabase
-              .from('users')
-              .select('*')
-              .eq('id', authUser.id)
-              .single()
-            
-            console.log('Retry data:', retryData)
-            console.log('Retry error:', retryError)
-            
-            if (retryData && !retryError) {
-              console.log('User data from database (retry):', retryData)
-              setUser(retryData as User)
-              setCredits(retryData.credits)
+            if (syncedUser) {
+              console.log('User synced into DB:', syncedUser)
+              setUser(syncedUser as User)
+              setCredits(syncedUser.credits)
             } else {
-              console.error('Retry failed:', retryError)
-              // 如果仍然失败，创建一个临时的用户对象，包含基本信息
+              // fallback 临时对象（仅最后兜底）
               const tempUser: User = {
                 id: authUser.id,
                 email: authUser.email || '',
