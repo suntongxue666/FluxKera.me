@@ -156,6 +156,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       await supabase.auth.signOut()
       setUser(null)
       setCredits(0)
+      setLoading(false)  // 确保登出后结束loading状态
     } catch (error) {
       console.error('Sign out error:', error)
     }
@@ -181,6 +182,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           setUser(null)
           setCredits(0)
           setLoading(false)
+        } else if (event === 'INITIAL_SESSION') {
+          console.log('Initial session event')
+          // 对于INITIAL_SESSION事件，我们也需要刷新用户信息
+          if (session?.user) {
+            await refreshUser()
+          } else {
+            setLoading(false)
+          }
         }
       }
     )
