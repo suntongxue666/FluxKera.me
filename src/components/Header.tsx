@@ -1,5 +1,4 @@
-import { useUser } from '@/lib/user-context'
-import UserStatus from '@/components/UserStatus'
+import HeaderUserMenu from '@/components/HeaderUserMenu'
 
 export default function Header() {
   return (
@@ -31,7 +30,7 @@ export default function Header() {
             </a>
           </nav>
           
-          <UserStatus />
+          <HeaderUserMenu />
         </div>
       </div>
     </header>
