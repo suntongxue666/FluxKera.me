@@ -39,7 +39,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         console.error('Error getting session:', sessionError)
         setUser(null)
         setCredits(0)
-        setLoading(false)
         return
       }
       
@@ -232,6 +231,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           console.log('User signed out')
           setUser(null)
           setCredits(0)
+          setLoading(false)
         }
       }
     )
