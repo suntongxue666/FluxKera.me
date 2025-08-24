@@ -29,79 +29,63 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true)
       console.log('=== REFRESH USER START ===')
-      
-      // 获取会话
+
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      console.log('Session data:', session)
-      console.log('Session error:', sessionError)
-      
       if (sessionError) {
         console.error('Error getting session:', sessionError)
         setUser(null)
         setCredits(0)
-        setLoading(false)
         return
       }
-      
-      if (session && session.user) {
+
+      if (session?.user) {
         console.log('Session found for user ID:', session.user.id)
-        // 获取用户信息和积分
+
+        // 从 users 表查
         const { data, error } = await supabase
           .from('users')
           .select('*')
           .eq('id', session.user.id)
           .single()
-        
-        console.log('Database user data:', data)
-        console.log('Database user error:', error)
-        
+
         if (data && !error) {
-          console.log('User data from database:', data)
           setUser(data as User)
           setCredits(data.credits)
+          return
+        }
+
+        // ⚠️ 数据库里没有用户 → 强制写入
+        console.warn('User not found in users table, syncing...')
+        const synced = await syncUserData(session.user)
+
+        if (synced?.user) {
+          setUser(synced.user as User)
+          setCredits(synced.user.credits)
         } else {
-          console.error('Error fetching user data from database:', error)
-          // 如果获取用户数据失败，尝试从auth.user获取基本信息并同步到数据库
+          // 最后兜底
           const authUser = session.user
-          if (authUser) {
-            console.log('Auth user data:', authUser)
-            // 强制调用 syncUserData，把用户写进数据库
-            const syncedUser = await syncUserData(authUser)
-            
-            if (syncedUser) {
-              console.log('User synced into DB:', syncedUser)
-              setUser(syncedUser as User)
-              setCredits(syncedUser.credits)
-            } else {
-              // fallback 临时对象（仅最后兜底）
-              const tempUser: User = {
-                id: authUser.id,
-                email: authUser.email || '',
-                google_id: authUser.user_metadata?.sub || '',
-                avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || null,
-                credits: 0,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              }
-              setUser(tempUser)
-              setCredits(0)
-            }
+          const tempUser: User = {
+            id: authUser.id,
+            email: authUser.email || '',
+            google_id: authUser.user_metadata?.sub || '',
+            avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || null,
+            credits: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           }
+          setUser(tempUser)
+          setCredits(0)
         }
       } else {
         console.log('No session found - user is not logged in')
         setUser(null)
         setCredits(0)
       }
-    } catch (error) {
-      console.error('Error refreshing user:', error)
-      // 即使出现错误，也要确保状态被正确设置
+    } catch (err) {
+      console.error('Error refreshing user:', err)
       setUser(null)
       setCredits(0)
     } finally {
-      console.log('=== REFRESH USER END ===')
-      console.log('Final user state:', user)
-      console.log('Final credits:', credits)
       setLoading(false)
     }
   }
