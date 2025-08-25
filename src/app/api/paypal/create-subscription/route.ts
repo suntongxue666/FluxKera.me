@@ -91,7 +91,7 @@ async function createSubscription(accessToken: string, planId: string, userEmail
         payer_selected: 'PAYPAL',
         payee_preferred: 'IMMEDIATE_PAYMENT_REQUIRED',
       },
-      return_url: `https://www.fluxkrea.me/subscription/success`,
+      return_url: `https://www.fluxkrea.me/subscription/return`,
       cancel_url: `https://www.fluxkrea.me/subscription/cancel`,
     },
   }

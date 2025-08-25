@@ -177,7 +177,7 @@ export default function PricingPage() {
                 How do credits work?
               </h3>
               <p className="text-gray-600">
-                Each image generation costs 10 credits. Credits never expire and can be used anytime. 
+                Each image generation costs 10 credits. Credits never expire and can be used anytime.
                 You can always see your current credit balance in your account dashboard.
               </p>
             </div>
@@ -187,7 +187,7 @@ export default function PricingPage() {
                 Can I change my plan anytime?
               </h3>
               <p className="text-gray-600">
-                Yes! You can upgrade or downgrade your plan at any time. When you upgrade, 
+                Yes! You can upgrade or downgrade your plan at any time. When you upgrade,
                 you'll immediately get access to the new features and credits.
               </p>
             </div>
@@ -197,7 +197,7 @@ export default function PricingPage() {
                 What's the difference between plans?
               </h3>
               <p className="text-gray-600">
-                Higher plans offer more credits, faster generation speeds, higher resolutions, 
+                Higher plans offer more credits, faster generation speeds, higher resolutions,
                 and additional features like API access and commercial licensing.
               </p>
             </div>
@@ -207,7 +207,7 @@ export default function PricingPage() {
                 Do you offer refunds?
               </h3>
               <p className="text-gray-600">
-                We offer a 30-day money-back guarantee for all paid plans. If you're not satisfied, 
+                We offer a 30-day money-back guarantee for all paid plans. If you're not satisfied,
                 contact our support team for a full refund.
               </p>
             </div>

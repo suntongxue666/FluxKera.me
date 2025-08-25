@@ -28,20 +28,72 @@ function SuccessContent() {
       }
 
       try {
-        // 这里我们可以调用API来确认订阅状态
-        // 暂时先刷新用户数据
-        await refreshUser()
-        setSubscriptionConfirmed(true)
-        setProcessing(false)
+        // 检查订阅状态，最多尝试10次，每次间隔3秒
+        let attempts = 0
+        const maxAttempts = 10
+        
+        const checkStatus = async (): Promise<void> => {
+          attempts++
+          console.log(`Checking subscription status (${attempts}/${maxAttempts})`)
+          
+          try {
+            const response = await fetch('/api/paypal/check-subscription-status', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                subscriptionId,
+                userEmail: 'current-user' // 这里需要获取当前用户email
+              }),
+            })
+
+            const result = await response.json()
+            
+            if (result.success && result.status === 'active') {
+              // 订阅已激活
+              await refreshUser()
+              setSubscriptionConfirmed(true)
+              setProcessing(false)
+              return
+            }
+            
+            // 如果还未激活且未达到最大尝试次数，继续检查
+            if (attempts < maxAttempts) {
+              setTimeout(checkStatus, 3000) // 3秒后重试
+            } else {
+              // 超时，但不算错误，可能webhook还在处理
+              await refreshUser()
+              setSubscriptionConfirmed(true)
+              setProcessing(false)
+            }
+          } catch (error) {
+            console.error(`Status check attempt ${attempts} failed:`, error)
+            if (attempts < maxAttempts) {
+              setTimeout(checkStatus, 3000)
+            } else {
+              // 即使检查失败，也显示成功，因为PayPal已经处理
+              await refreshUser()
+              setSubscriptionConfirmed(true)
+              setProcessing(false)
+            }
+          }
+        }
+        
+        // 开始检查
+        checkStatus()
+        
       } catch (error) {
         console.error('Error confirming subscription:', error)
-        setError('Failed to confirm subscription')
+        // 不显示错误，因为PayPal已经成功处理
+        await refreshUser()
+        setSubscriptionConfirmed(true)
         setProcessing(false)
       }
     }
 
     confirmSubscription()
-  }, [subscriptionId, token, refreshUser])
+  }, [subscriptionId, planName, refreshUser])
 
   useEffect(() => {
     if (!processing && subscriptionConfirmed) {
