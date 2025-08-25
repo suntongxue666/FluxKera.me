@@ -1,9 +1,9 @@
-require('dotenv').config()
+require('dotenv').config({ path: '.env.local' })
 const { createClient } = require('@supabase/supabase-js')
 
 // 从环境变量获取配置
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_SECRET || process.env.SUPABASE_SERVICE_KEY
 
 console.log('Supabase URL:', supabaseUrl)
 console.log('Supabase Service Key exists:', !!supabaseServiceKey)

@@ -43,7 +43,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       if (!session?.user) {
         console.log('No session found yet - keep waiting for SIGNED_IN event')
         // 🚩 关键：不结束 loading，等 onAuthStateChange 事件来触发
-        // 移除超时设置，让 onAuthStateChange 事件来处理
         return
       }
 
@@ -102,7 +101,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       console.error('Error refreshing user:', err)
       setUser(null)
       setCredits(0)
-      setLoading(false)
+      setLoading(false)  // 这里保留，说明确实失败了
     }
   }
 
@@ -112,11 +111,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       console.log('开始Google登录流程...')
       console.log('当前URL:', window.location.href)
       console.log('重定向URL:', `${window.location.origin}/auth/callback`)
-      
+
       // 检查Supabase配置
       console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
       console.log('Supabase Anon Key是否存在:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-      
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -127,7 +126,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           }
         }
       })
-      
+
       if (error) {
         console.error('Google登录错误:', error)
         alert('登录失败: ' + error.message)
@@ -161,38 +160,42 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // 初始化和监听认证状态变化
   useEffect(() => {
     console.log('=== USER PROVIDER MOUNTED ===')
-    
+
+    let isInitialized = false
+
     // 监听认证状态变化
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('=== AUTH STATE CHANGED ===')
         console.log('Event:', event)
         console.log('Session:', session)
-        
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          console.log('User signed in or token refreshed')
-          // 立即刷新用户信息
+
+        if (event === 'INITIAL_SESSION') {
+          console.log('Initial session event')
+          isInitialized = true
+          if (session?.user) {
+            await refreshUser()
+          } else {
+            setLoading(false)
+          }
+        } else if (event === 'SIGNED_IN') {
+          console.log('User signed in')
           await refreshUser()
         } else if (event === 'SIGNED_OUT') {
           console.log('User signed out')
           setUser(null)
           setCredits(0)
           setLoading(false)
-        } else if (event === 'INITIAL_SESSION') {
-          console.log('Initial session event')
-          // 对于INITIAL_SESSION事件，我们也需要刷新用户信息
-          if (session?.user) {
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed')
+          // 只有在已经初始化后才刷新，避免重复调用
+          if (isInitialized) {
             await refreshUser()
-          } else {
-            setLoading(false)
           }
         }
       }
     )
-    
-    // 页面加载时立即刷新用户信息
-    refreshUser()
-    
+
     return () => {
       console.log('=== USER PROVIDER UNMOUNTING ===')
       subscription.unsubscribe()

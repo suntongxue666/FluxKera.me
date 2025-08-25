@@ -50,87 +50,48 @@ export async function GET(request: NextRequest) {
         const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
         
         try {
-          // 检查用户是否已存在
-          console.log('Checking if user exists in database...')
-          const { data: existingUser, error: fetchError } = await supabaseAdmin
-            .from('users')
-            .select('*')
-            .eq('id', user.id)
-            .single()
-          
-          console.log('Existing user check:', existingUser, fetchError)
-          
           // 检查是否为内测账号需要重置
           const isResetUser = user.email === 'sunwei7482@gmail.com' || user.email === 'tiktreeapp@gmail.com';
           
-          // 如果用户不存在或为内测账号需要重置，创建新用户并给予初始积分
-          if (!existingUser || isResetUser) {
-            console.log('Creating/updating user:', {
+          // 使用 upsert 一次性处理用户创建/更新，减少数据库查询
+          console.log('Upserting user data...')
+          const { data: userData, error: upsertError } = await supabaseAdmin
+            .from('users')
+            .upsert({
               id: user.id,
               email: user.email || '',
               google_id: user.user_metadata?.sub || user.id,
               avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
-              credits: 20
-            });
-            
-            // 使用服务端客户端创建用户
-            const { data: userData, error: upsertError } = await supabaseAdmin
-              .from('users')
-              .upsert({
-                id: user.id,
-                email: user.email || '',
-                google_id: user.user_metadata?.sub || user.id,
-                avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
-                credits: 20, // 新用户或重置用户获得20积分
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              }, {
-                onConflict: 'id'
-              })
-              .select()
-              .single()
-            
-            if (upsertError) {
-              console.error('Error creating user:', upsertError)
-              return NextResponse.redirect(new URL('/?error=user_creation_failed&message=' + encodeURIComponent(upsertError.message), request.url))
-            }
-            
-            console.log('User created/updated:', userData)
-            
-            // 记录积分交易
+              credits: isResetUser ? 20 : undefined, // 只有重置用户才强制设置积分
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'id',
+              ignoreDuplicates: false
+            })
+            .select()
+            .single()
+          
+          if (upsertError) {
+            console.error('Error upserting user:', upsertError)
+            return NextResponse.redirect(new URL('/?error=user_creation_failed&message=' + encodeURIComponent(upsertError.message), request.url))
+          }
+          
+          console.log('User upserted successfully:', userData)
+          
+          // 只有在重置用户时才记录积分交易
+          if (isResetUser && userData.credits === 20) {
             const { error: transactionError } = await supabaseAdmin
               .from('credit_transactions')
               .insert({
                 user_id: user.id,
                 type: 'credit',
                 amount: 20,
-                description: isResetUser ? '用户积分重置' : '新用户注册奖励',
+                description: '用户积分重置',
                 created_at: new Date().toISOString()
               })
             
             if (transactionError) {
               console.error('Error creating credit transaction:', transactionError)
-            }
-          } else {
-            // 更新现有用户信息
-            console.log('Updating existing user:', {
-              email: user.email || '',
-              avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null
-            });
-            
-            const { error: updateError } = await supabaseAdmin
-              .from('users')
-              .update({
-                email: user.email || '',
-                avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', user.id)
-            
-            if (updateError) {
-              console.error('Error updating user:', updateError)
-            } else {
-              console.log('User updated successfully')
             }
           }
         } catch (error) {

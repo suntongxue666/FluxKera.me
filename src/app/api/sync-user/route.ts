@@ -28,45 +28,32 @@ export async function POST(request: NextRequest) {
       }
     })
     
-    // 检查用户是否已存在
-    const { data: existingUser, error: fetchError } = await supabaseAdmin
+    // 使用 upsert 一次性处理用户创建/更新，减少数据库查询
+    const { data: userData, error: upsertError } = await supabaseAdmin
       .from('users')
-      .select('*')
-      .eq('id', id)
+      .upsert({
+        id,
+        email: email || '',
+        google_id: google_id || id,
+        avatar_url: avatar_url || null,
+        credits: 20, // 新用户获得20积分，现有用户保持原有积分
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'id',
+        ignoreDuplicates: false
+      })
+      .select()
       .single()
     
-    console.log('Fetch user result:', { existingUser, fetchError })
-    
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      console.error('Error fetching user:', fetchError)
-      return NextResponse.json({ error: 'Database error fetching user: ' + fetchError.message }, { status: 500 })
+    if (upsertError) {
+      console.error('Error upserting user:', upsertError)
+      return NextResponse.json({ error: 'Failed to upsert user: ' + upsertError.message }, { status: 500 })
     }
     
-    // 如果用户不存在，创建新用户
-    if (!existingUser) {
-      const { data: userData, error: insertError } = await supabaseAdmin
-        .from('users')
-        .upsert({
-          id,
-          email: email || '',
-          google_id: google_id || id,
-          avatar_url: avatar_url || null,
-          credits: 20, // 新用户获得20积分
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'id',
-          returning: 'representation'
-        })
-        .select()
-        .single()
-      
-      if (insertError) {
-        console.error('Error creating user:', insertError)
-        return NextResponse.json({ error: 'Failed to create user' }, { status: 500 })
-      }
-      
-      // 记录积分交易
+    console.log('User upserted successfully:', userData)
+    
+    // 如果是新用户（刚创建），记录积分交易
+    if (userData.credits === 20) {
       const { error: transactionError } = await supabaseAdmin
         .from('credit_transactions')
         .insert({
@@ -80,28 +67,9 @@ export async function POST(request: NextRequest) {
       if (transactionError) {
         console.error('Error creating credit transaction:', transactionError)
       }
-      
-      return NextResponse.json({ user: userData })
-    } else {
-      // 更新现有用户信息
-      const { data: userData, error: updateError } = await supabaseAdmin
-        .from('users')
-        .update({
-          email: email || '',
-          avatar_url: avatar_url || null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single()
-      
-      if (updateError) {
-        console.error('Error updating user:', updateError)
-        return NextResponse.json({ error: 'Failed to update user' }, { status: 500 })
-      }
-      
-      return NextResponse.json({ user: userData })
     }
+    
+    return NextResponse.json({ user: userData })
   } catch (error) {
     console.error('Unexpected error in sync user API:', error)
     return NextResponse.json({ error: 'Unexpected error' }, { status: 500 })
