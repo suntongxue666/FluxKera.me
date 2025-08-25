@@ -72,45 +72,20 @@ export default function PricingPage() {
     const createPlans = async () => {
       try {
         console.log('Starting to create PayPal plans...')
-        const plansToCreate = [
-          { name: 'Pro', price: 9.9 },
-          { name: 'Max', price: 29.9 }
-        ]
-
-        const planIdMap: {[key: string]: string} = {}
-
-        // 串行创建计划，避免并发问题
-        for (const plan of plansToCreate) {
-          try {
-            console.log(`Creating plan: ${plan.name}`)
-            const response = await fetch('/api/paypal/create-plan', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                planName: plan.name,
-                price: plan.price
-              }),
-            })
-            
-            const result = await response.json()
-            console.log(`Plan ${plan.name} creation result:`, result)
-            
-            if (result.success && result.planId) {
-              planIdMap[plan.name] = result.planId
-              console.log(`✅ ${plan.name} plan created successfully: ${result.planId}`)
-            } else {
-              console.error(`❌ Failed to create ${plan.name} plan:`, result)
-            }
-          } catch (planError) {
-            console.error(`❌ Error creating ${plan.name} plan:`, planError)
-          }
+        
+        // 使用固定的计划ID，避免重复创建
+        const fixedPlanIds = {
+          'Pro': 'P-9NE99223BR0481937NCWIMEY',
+          'Max': 'P-34X30940DK7247914NCWIMLY'
         }
 
-        console.log('Final plan IDs:', planIdMap)
-        setPlanIds(planIdMap)
+        console.log('Using fixed plan IDs:', fixedPlanIds)
+        setPlanIds(fixedPlanIds)
         setLoadingPlans(false)
+
+        // 可选：验证计划是否存在，如果不存在则创建新的
+        // 这里暂时跳过验证，直接使用固定ID
+        
       } catch (error) {
         console.error('Error in createPlans:', error)
         setLoadingPlans(false)
