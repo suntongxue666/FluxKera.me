@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-// PayPal API 基础URL
-const PAYPAL_API_BASE = process.env.PAYPAL_ENVIRONMENT === 'sandbox' 
-  ? 'https://api-m.sandbox.paypal.com'
-  : 'https://api-m.paypal.com'
+// PayPal API 基础URL - 强制使用沙盒环境
+const PAYPAL_API_BASE = 'https://api-m.sandbox.paypal.com'
 
 // 获取PayPal访问令牌
 async function getPayPalAccessToken() {
@@ -87,8 +85,8 @@ async function createSubscription(accessToken: string, planId: string, userEmail
         payer_selected: 'PAYPAL',
         payee_preferred: 'IMMEDIATE_PAYMENT_REQUIRED',
       },
-      return_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/subscription/success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/subscription/cancel`,
+      return_url: `https://www.fluxkrea.me/subscription/success`,
+      cancel_url: `https://www.fluxkrea.me/subscription/cancel`,
     },
   }
 
