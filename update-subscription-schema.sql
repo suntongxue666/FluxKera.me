@@ -35,8 +35,11 @@ COMMENT ON COLUMN public.credit_transactions.type IS 'Types: credit, debit, subs
 -- 创建或更新RLS策略
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 
+-- 删除现有策略（如果存在）
+DROP POLICY IF EXISTS "Users can view own subscriptions" ON public.subscriptions;
+
 -- 用户只能查看自己的订阅
-CREATE POLICY IF NOT EXISTS "Users can view own subscriptions" ON public.subscriptions
+CREATE POLICY "Users can view own subscriptions" ON public.subscriptions
   FOR SELECT USING (auth.uid() = user_id);
 
 -- 创建函数来处理订阅续费
