@@ -8,6 +8,9 @@ const nextConfig = {
     // 在生产构建时忽略TypeScript错误
     ignoreBuildErrors: true,
   },
+  env: {
+    NEXT_PUBLIC_PAYPAL_CLIENT_ID: process.env.PAYPAL_CLIENT_ID,
+  },
   // 其他配置...
 }
 

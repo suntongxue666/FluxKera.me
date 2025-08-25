@@ -1,9 +1,9 @@
 'use client'
 
 import { Check, Star } from 'lucide-react'
-// 暂时注释掉 PayPal 相关代码，以排除它是否是问题所在
-// import dynamic from 'next/dynamic'
-// const PayPalCheckout = dynamic(() => import('@/components/PayPalCheckout'), { ssr: false })
+import { useState } from 'react'
+import { useUser } from '@/lib/user-context'
+
 
 const plans = [
   {
@@ -62,17 +62,49 @@ const plans = [
 ]
 
 export default function PricingPage() {
-  const handlePayPalSuccess = (details: any, planName: string, credits: number) => {
-    console.log('Payment successful:', details)
-    // TODO: Handle successful payment
-    // - Update user credits in database
-    // - Send confirmation email
-    // - Redirect to success page
-  }
+  const { user, refreshUser } = useUser()
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle')
+  const [paymentMessage, setPaymentMessage] = useState('')
 
-  const handlePayPalError = (error: any) => {
-    console.error('Payment error:', error)
-    // TODO: Handle payment error
+  const handlePlanSelect = async (planName: string, price: number, credits: number) => {
+    if (!user) {
+      alert('Please sign in to subscribe to a plan')
+      return
+    }
+    
+    setPaymentStatus('processing')
+    setPaymentMessage('Creating subscription...')
+    
+    try {
+      // 直接创建订阅并跳转到PayPal
+      const response = await fetch('/api/paypal/create-subscription', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          planName,
+          price,
+          credits,
+          userId: user.id,
+          userEmail: user.email
+        }),
+      })
+
+      const result = await response.json()
+      
+      if (result.success && result.approvalUrl) {
+        // 跳转到PayPal支付页面
+        window.location.href = result.approvalUrl
+      } else {
+        setPaymentStatus('error')
+        setPaymentMessage('Failed to create subscription. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error creating subscription:', error)
+      setPaymentStatus('error')
+      setPaymentMessage('Network error. Please try again.')
+    }
   }
 
   return (
@@ -152,20 +184,39 @@ export default function PricingPage() {
                 ) : (
                   <>
                     <button
+                      onClick={() => handlePlanSelect(plan.name, plan.price, plan.credits)}
+                      disabled={paymentStatus === 'processing'}
                       className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
-                        plan.name === 'Pro'
+                        paymentStatus === 'processing'
+                          ? 'bg-gray-400 text-white cursor-not-allowed'
+                          : plan.name === 'Pro'
                           ? 'bg-purple-600 text-white hover:bg-purple-700'
                           : 'bg-orange-500 text-white hover:bg-orange-600'
                       }`}
                     >
-                      {plan.name === 'Pro' ? 'Choose Pro' : 'Choose Max'}
+                      {paymentStatus === 'processing' ? 'Creating Subscription...' : plan.buttonText}
                     </button>
-                    <div className="mt-4">
-                      {/* 暂时注释掉 PayPal 组件 */}
-                      <div className="text-sm text-gray-500 text-center">
-                        PayPal checkout temporarily disabled
+                    
+                    {/* 状态消息 */}
+                    {paymentMessage && (
+                      <div className={`mt-4 p-3 rounded-lg ${
+                        paymentStatus === 'success' 
+                          ? 'bg-green-100 border border-green-300' 
+                          : paymentStatus === 'error'
+                          ? 'bg-red-100 border border-red-300'
+                          : 'bg-blue-100 border border-blue-300'
+                      }`}>
+                        <p className={`text-sm ${
+                          paymentStatus === 'success' 
+                            ? 'text-green-700' 
+                            : paymentStatus === 'error'
+                            ? 'text-red-700'
+                            : 'text-blue-700'
+                        }`}>
+                          {paymentMessage}
+                        </p>
                       </div>
-                    </div>
+                    )}
                   </>
                 )}
               </div>
