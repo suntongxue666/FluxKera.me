@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 
 // 初始化Supabase客户端
 const supabase = createClient(
-  process.env.SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_SECRET!
 )
 
