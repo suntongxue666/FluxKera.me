@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@supabase/ssr'
 import { User } from './auth'
 
 // 定义上下文类型
@@ -19,7 +19,10 @@ const UserContext = createContext<UserContextType | undefined>(undefined)
 
 // 上下文提供者组件
 export function UserProvider({ children }: { children: React.ReactNode }) {
-  const supabase = createClientComponentClient()
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
   const [user, setUser] = useState<User | null>(null)
   const [credits, setCredits] = useState<number>(0)
   const [loading, setLoading] = useState(true)
@@ -27,10 +30,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // 刷新用户信息
   const refreshUser = async () => {
     try {
-      setLoading(true)
-      console.log('=== REFRESH USER START ===')
+      // 添加超时保护
+      const sessionPromise = supabase.auth.getSession()
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('getSession timeout')), 5000)
+      )
 
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      const { data: { session }, error: sessionError } = await Promise.race([
+        sessionPromise,
+        timeoutPromise
+      ]) as any
 
       if (sessionError) {
         console.error('Error getting session:', sessionError)
@@ -41,13 +50,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (!session?.user) {
-        console.log('No session found yet - keep waiting for SIGNED_IN event')
-        // 🚩 关键：不结束 loading，等 onAuthStateChange 事件来触发
+        // 设置一个超时，如果10秒内没有session，就结束loading
+        setTimeout(() => {
+          if (loading) {
+            setLoading(false)
+          }
+        }, 10000)
         return
       }
 
-      console.log('Session found for user ID:', session.user.id)
-
+      // 尝试直接查询数据库（应该通过 RLS 策略）
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -55,14 +67,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         .single()
 
       if (data && !error) {
-        console.log('User data from database:', data)
         setUser(data as User)
         setCredits(data.credits)
-        setLoading(false)   // ✅ 成功获取用户 → 结束 loading
+        setLoading(false)
         return
       }
 
-      console.warn('User not found in users table, syncing...')
+      // 如果数据库查询失败，使用 API 同步
       const response = await fetch('/api/sync-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -79,7 +90,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (syncedUser) {
           setUser(syncedUser as User)
           setCredits(syncedUser.credits)
-          setLoading(false)   // ✅ 成功获取用户 → 结束 loading
+          setLoading(false)
           return
         }
       }
@@ -101,77 +112,87 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       console.error('Error refreshing user:', err)
       setUser(null)
       setCredits(0)
-      setLoading(false)  // 这里保留，说明确实失败了
+      setLoading(false)
     }
   }
 
   // 登录方法
   const signIn = async () => {
-    try {
-      console.log('开始Google登录流程...')
-      console.log('当前URL:', window.location.href)
-      console.log('重定向URL:', `${window.location.origin}/auth/callback`)
+    return new Promise<void>((resolve, reject) => {
+      setTimeout(async () => {
+        try {
+          console.log('Starting sign in process...')
 
-      // 检查Supabase配置
-      console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
-      console.log('Supabase Anon Key是否存在:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+          // 获取当前URL信息
+          const redirectUrl = `${window.location.origin}/auth/callback`
 
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent'
+          console.log('Redirect URL:', redirectUrl)
+
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo: redirectUrl,
+              queryParams: {
+                access_type: 'offline',
+                prompt: 'consent'
+              }
+            }
+          })
+
+          if (error) {
+            console.error('Google登录错误:', error)
+            alert('登录失败: ' + error.message)
+            reject(error)
+          } else {
+            // 如果有URL，直接跳转
+            if (data?.url) {
+              console.log('Redirecting to:', data.url)
+              window.location.href = data.url
+              resolve()
+            } else {
+              const noUrlError = new Error('No redirect URL received from OAuth')
+              console.warn(noUrlError.message)
+              reject(noUrlError)
+            }
           }
+        } catch (error) {
+          console.error('Sign in error:', error)
+          alert('登录过程中发生错误: ' + (error as Error).message)
+          reject(error)
         }
-      })
-
-      if (error) {
-        console.error('Google登录错误:', error)
-        alert('登录失败: ' + error.message)
-      } else {
-        console.log('Google登录成功，重定向中...', data)
-        // 如果有URL，直接跳转
-        if (data?.url) {
-          console.log('正在跳转到:', data.url)
-          window.location.href = data.url
-        }
-      }
-    } catch (error) {
-      console.error('Sign in error:', error)
-      alert('登录过程中发生错误，请查看控制台')
-    }
+      }, 0)
+    })
   }
 
   // 登出方法
   const signOut = async () => {
     try {
-      console.log('Signing out...')
       await supabase.auth.signOut()
       setUser(null)
       setCredits(0)
       setLoading(false)  // 确保登出后结束loading状态
+
+      // 清除本地存储
+      localStorage.clear()
+      sessionStorage.clear()
+
+      // 刷新页面确保完全清除状态
+      window.location.reload()
     } catch (error) {
       console.error('Sign out error:', error)
     }
   }
 
+
+
   // 初始化和监听认证状态变化
   useEffect(() => {
-    console.log('=== USER PROVIDER MOUNTED ===')
-
     let isInitialized = false
 
     // 监听认证状态变化
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('=== AUTH STATE CHANGED ===')
-        console.log('Event:', event)
-        console.log('Session:', session)
-
         if (event === 'INITIAL_SESSION') {
-          console.log('Initial session event')
           isInitialized = true
           if (session?.user) {
             await refreshUser()
@@ -179,15 +200,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             setLoading(false)
           }
         } else if (event === 'SIGNED_IN') {
-          console.log('User signed in')
           await refreshUser()
         } else if (event === 'SIGNED_OUT') {
-          console.log('User signed out')
           setUser(null)
           setCredits(0)
           setLoading(false)
         } else if (event === 'TOKEN_REFRESHED') {
-          console.log('Token refreshed')
           // 只有在已经初始化后才刷新，避免重复调用
           if (isInitialized) {
             await refreshUser()
@@ -197,18 +215,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     )
 
     return () => {
-      console.log('=== USER PROVIDER UNMOUNTING ===')
       subscription.unsubscribe()
     }
   }, [])
-
-  // 添加一个useEffect来调试状态变化
-  useEffect(() => {
-    console.log('=== USER STATE CHANGED ===')
-    console.log('User:', user)
-    console.log('Credits:', credits)
-    console.log('Loading:', loading)
-  }, [user, credits, loading])
 
   return (
     <UserContext.Provider value={{ user, credits, loading, refreshUser, signIn, signOut }}>

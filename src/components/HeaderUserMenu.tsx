@@ -5,6 +5,9 @@ import { useUser } from '@/lib/user-context'
 
 export default function HeaderUserMenu() {
   const { user, credits, loading, signIn, signOut } = useUser()
+  
+  // 调试信息
+  console.log('HeaderUserMenu render:', { user: !!user, credits, loading })
 
   if (loading) {
     // ⏳ 加载中显示 skeleton 占位
@@ -34,10 +37,16 @@ export default function HeaderUserMenu() {
             src={user.avatar_url}
             alt={user.email}
             className="w-8 h-8 rounded-full"
+            onError={(e) => {
+              console.log('Avatar image failed to load:', user.avatar_url)
+              e.currentTarget.style.display = 'none'
+              e.currentTarget.nextElementSibling?.classList.remove('hidden')
+            }}
           />
-        ) : (
-          <div className="w-8 h-8 bg-gray-400 rounded-full" />
-        )}
+        ) : null}
+        <div className={`w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs ${user.avatar_url ? 'hidden' : ''}`}>
+          {user.email?.charAt(0).toUpperCase()}
+        </div>
         <span className="text-sm font-medium">{credits} pts</span>
       </div>
 

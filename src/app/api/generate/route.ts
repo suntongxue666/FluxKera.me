@@ -61,22 +61,35 @@ export async function POST(request: NextRequest) {
     )
     
     // 检查用户是否已登录
+    console.log('Checking user session...')
+    console.log('Available cookies:', cookieStore.getAll().map(c => c.name))
+    
     const { data: { session }, error: sessionError } = await supabaseServer.auth.getSession()
+    
+    console.log('Session check result:', { 
+      hasSession: !!session, 
+      hasUser: !!session?.user,
+      userId: session?.user?.id,
+      error: sessionError 
+    })
     
     if (sessionError) {
       console.error('Session error:', sessionError)
       return NextResponse.json(
-        { success: false, error: 'Authentication error' },
+        { success: false, error: 'Authentication error', details: sessionError.message },
         { status: 500 }
       )
     }
     
     if (!session) {
+      console.log('No session found, user not authenticated')
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
         { status: 401 }
       )
     }
+    
+    console.log('User authenticated:', session.user.id)
     
     // 获取用户信息
     const { data: user, error: userError } = await supabaseServer

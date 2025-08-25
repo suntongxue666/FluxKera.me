@@ -28,7 +28,7 @@ const FLUX_KREA_SETTINGS = {
 }
 
 export default function AIGenerator() {
-  const { user, credits, signIn, refreshUser } = useUser()
+  const { user, credits, loading, signIn, refreshUser } = useUser()
   const [prompt, setPrompt] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
@@ -75,6 +75,7 @@ export default function AIGenerator() {
     setError(null)
     setIsGenerating(true)
     try {
+      console.log('Sending generation request...')
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
@@ -91,7 +92,11 @@ export default function AIGenerator() {
         credentials: 'include' // 确保包含认证cookies
       })
       
+      console.log('Response status:', response.status)
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+      
       const data = await response.json()
+      console.log('Response data:', data)
       
       if (data.success) {
         // 直接使用返回的图片URL
@@ -103,10 +108,11 @@ export default function AIGenerator() {
         // 刷新用户积分
         await refreshUser()
       } else {
+        console.error('Generation failed:', data)
         setError(data.error || 'Generation failed, please try again later.')
       }
     } catch (error) {
-      console.error('Error:', error)
+      console.error('Network error:', error)
       setError('Network error, please check your connection.')
     } finally {
       setIsGenerating(false)
@@ -137,8 +143,47 @@ export default function AIGenerator() {
     }
   }
   
-  const handleGoogleLogin = async () => {
-    await signIn()
+  const handleGoogleLogin = () => {
+    // 使用setTimeout来避免React事件处理的问题
+    setTimeout(async () => {
+      try {
+        console.log('=== GOOGLE LOGIN START ===')
+        
+        // 直接创建Supabase客户端
+        const { createBrowserClient } = await import('@supabase/ssr')
+        const supabase = createBrowserClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        )
+        
+        console.log('Supabase client created')
+        
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}/auth/callback`,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent'
+            }
+          }
+        })
+        
+        if (error) {
+          console.error('OAuth error:', error)
+          alert('登录失败: ' + error.message)
+        } else if (data?.url) {
+          console.log('Redirecting to Google...')
+          window.location.href = data.url
+        } else {
+          console.error('No redirect URL received')
+          alert('登录失败: 未收到重定向URL')
+        }
+      } catch (error) {
+        console.error('Login error:', error)
+        alert('登录过程中发生错误: ' + (error as Error).message)
+      }
+    }, 0)
   }
   
   const handleCloseModal = () => {

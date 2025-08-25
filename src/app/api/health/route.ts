@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     // 检查数据库连接
     const { data, error } = await supabase
       .from('users')
-      .select('count()', { count: 'exact' })
+      .select('id')
       .limit(1)
     
     if (error) {
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       status: 'ok',
       database: 'connected',
-      userCount: data?.[0]?.count || 0,
+      hasUsers: data && data.length > 0,
       authenticated: !!session,
       timestamp: new Date().toISOString()
     })
