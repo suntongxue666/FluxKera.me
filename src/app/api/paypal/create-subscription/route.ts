@@ -112,11 +112,20 @@ export async function POST(request: NextRequest) {
 
     console.log('Creating subscription for:', { planName, price, credits, userId, userEmail })
 
+    // 检查必需的环境变量
+    if (!process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_CLIENT_SECRET) {
+      console.error('Missing PayPal credentials')
+      throw new Error('PayPal configuration error')
+    }
+
     // 获取访问令牌
     const accessToken = await getPayPalAccessToken()
     if (!accessToken) {
+      console.error('Failed to get PayPal access token')
       throw new Error('Failed to get PayPal access token')
     }
+
+    console.log('PayPal access token obtained successfully')
 
     // 创建或获取订阅计划
     let planId = `fluxkrea-${planName.toLowerCase()}-plan`
@@ -131,7 +140,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      await fetch(`${PAYPAL_API_BASE}/v1/catalogs/products`, {
+      const productResponse = await fetch(`${PAYPAL_API_BASE}/v1/catalogs/products`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -140,34 +149,53 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify(productData),
       })
+      
+      const productResult = await productResponse.json()
+      console.log('Product creation result:', productResult)
+      
+      if (!productResponse.ok && productResponse.status !== 409) {
+        console.error('Product creation failed:', productResult)
+      }
     } catch (error) {
-      // 产品可能已存在，继续执行
-      console.log('Product might already exist, continuing...')
+      console.log('Product creation error (might already exist):', error)
     }
 
     // 创建订阅计划
+    console.log('Creating subscription plan...')
     const plan = await createSubscriptionPlan(accessToken, planName, price)
+    console.log('Plan creation result:', plan)
+    
     if (plan.id) {
       planId = plan.id
+    } else if (plan.error) {
+      console.error('Plan creation failed:', plan)
+      throw new Error(`Plan creation failed: ${JSON.stringify(plan)}`)
     }
 
     // 创建订阅
+    console.log('Creating subscription with planId:', planId)
     const subscription = await createSubscription(accessToken, planId, userEmail)
+    console.log('Subscription creation result:', subscription)
 
     if (subscription.id) {
+      const approvalUrl = subscription.links?.find((link: any) => link.rel === 'approve')?.href
+      console.log('Subscription created successfully:', { id: subscription.id, approvalUrl })
+      
       return NextResponse.json({
         success: true,
         subscriptionId: subscription.id,
-        approvalUrl: subscription.links?.find((link: any) => link.rel === 'approve')?.href
+        approvalUrl
       })
     } else {
+      console.error('Subscription creation failed:', subscription)
       throw new Error('Failed to create subscription: ' + JSON.stringify(subscription))
     }
 
   } catch (error) {
     console.error('PayPal subscription creation error:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { success: false, error: 'Failed to create subscription' },
+      { success: false, error: errorMessage },
       { status: 500 }
     )
   }
