@@ -21,7 +21,12 @@ const UserContext = createContext<UserContextType | undefined>(undefined)
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        flowType: 'pkce'
+      }
+    }
   )
   const [user, setUser] = useState<User | null>(null)
   const [credits, setCredits] = useState<number>(0)
@@ -135,7 +140,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
               queryParams: {
                 access_type: 'offline',
                 prompt: 'consent'
-              }
+              },
+              skipBrowserRedirect: false
             }
           })
 

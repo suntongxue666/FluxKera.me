@@ -1,4 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
@@ -7,96 +7,104 @@ import { createClient } from '@supabase/supabase-js'
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
+  const error = requestUrl.searchParams.get('error')
 
   console.log('=== AUTH CALLBACK START ===')
   console.log('Code:', code ? 'present' : 'missing')
+  console.log('Error:', error)
   console.log('Request URL:', request.url)
+
+  // 如果有错误参数，直接重定向
+  if (error) {
+    console.error('OAuth error from provider:', error)
+    return NextResponse.redirect(new URL(`/?error=oauth_error&message=${encodeURIComponent(error)}`, request.url))
+  }
 
   if (code) {
     const cookieStore = cookies()
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          flowType: 'pkce'
+        },
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            try {
+              cookieStore.set({ name, value, ...options })
+            } catch (error) {
+              console.error('Error setting cookie:', error)
+            }
+          },
+          remove(name: string, options: CookieOptions) {
+            try {
+              cookieStore.delete({ name, ...options })
+            } catch (error) {
+              console.error('Error removing cookie:', error)
+            }
+          },
+        },
+      }
+    )
     
     try {
       // 交换授权码获取会话
       console.log('Exchanging code for session...')
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+      const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
       
-      if (error) {
-        console.error('Error exchanging code for session:', error)
-        return NextResponse.redirect(new URL('/?error=auth_failed&message=' + encodeURIComponent(error.message), request.url))
+      if (exchangeError) {
+        console.error('Error exchanging code for session:', exchangeError)
+        // 如果是PKCE错误，尝试重新登录
+        if (exchangeError.message.includes('code challenge') || exchangeError.message.includes('code verifier')) {
+          console.log('PKCE error detected, redirecting to re-login')
+          return NextResponse.redirect(new URL('/?error=pkce_error&message=Please try logging in again', request.url))
+        }
+        return NextResponse.redirect(new URL('/?error=auth_failed&message=' + encodeURIComponent(exchangeError.message), request.url))
       }
       
-      console.log('Session exchanged successfully:', data)
+      console.log('Session exchanged successfully')
       
       // 获取当前用户
       console.log('Getting user info...')
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      if (userError) {
+        console.error('Error getting user:', userError)
+        return NextResponse.redirect(new URL('/?error=user_fetch_failed&message=' + encodeURIComponent(userError.message), request.url))
+      }
       
       if (user) {
-        console.log('Authenticated user:', user)
+        console.log('Authenticated user:', user.email)
         
-        // 检查环境变量
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-        const supabaseServiceKey = process.env.SUPABASE_SERVICE_SECRET || process.env.SUPABASE_SERVICE_KEY
-        
-        if (!supabaseUrl || !supabaseServiceKey) {
-          console.error('Missing Supabase environment variables')
-          console.error('NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl)
-          console.error('SUPABASE_SERVICE_KEY:', supabaseServiceKey ? 'SET' : 'NOT SET')
-          return NextResponse.redirect(new URL('/?error=server_config', request.url))
-        }
-        
-        // 使用服务端客户端绕过RLS策略
-        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
-        
+        // 使用API同步用户数据，而不是直接操作数据库
         try {
-          // 检查是否为内测账号需要重置
-          const isResetUser = user.email === 'sunwei7482@gmail.com' || user.email === 'tiktreeapp@gmail.com';
-          
-          // 使用 upsert 一次性处理用户创建/更新，减少数据库查询
-          console.log('Upserting user data...')
-          const { data: userData, error: upsertError } = await supabaseAdmin
-            .from('users')
-            .upsert({
+          const syncResponse = await fetch(`${request.nextUrl.origin}/api/sync-user`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${data.session?.access_token}`
+            },
+            body: JSON.stringify({
               id: user.id,
-              email: user.email || '',
-              google_id: user.user_metadata?.sub || user.id,
-              avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
-              credits: isResetUser ? 20 : undefined, // 只有重置用户才强制设置积分
-              updated_at: new Date().toISOString()
-            }, {
-              onConflict: 'id',
-              ignoreDuplicates: false
-            })
-            .select()
-            .single()
+              email: user.email,
+              google_id: user.user_metadata?.sub,
+              avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture,
+            }),
+          })
           
-          if (upsertError) {
-            console.error('Error upserting user:', upsertError)
-            return NextResponse.redirect(new URL('/?error=user_creation_failed&message=' + encodeURIComponent(upsertError.message), request.url))
+          if (!syncResponse.ok) {
+            console.error('User sync failed:', syncResponse.status)
+            // 即使同步失败，也继续登录流程
+          } else {
+            console.log('User synced successfully')
           }
-          
-          console.log('User upserted successfully:', userData)
-          
-          // 只有在重置用户时才记录积分交易
-          if (isResetUser && userData.credits === 20) {
-            const { error: transactionError } = await supabaseAdmin
-              .from('credit_transactions')
-              .insert({
-                user_id: user.id,
-                type: 'credit',
-                amount: 20,
-                description: '用户积分重置',
-                created_at: new Date().toISOString()
-              })
-            
-            if (transactionError) {
-              console.error('Error creating credit transaction:', transactionError)
-            }
-          }
-        } catch (error) {
-          console.error('Unexpected error during user creation/update:', error)
-          return NextResponse.redirect(new URL('/?error=server_error&message=' + encodeURIComponent((error as Error).message), request.url))
+        } catch (syncError) {
+          console.error('Error syncing user:', syncError)
+          // 即使同步失败，也继续登录流程
         }
       } else {
         console.log('No user found after session exchange')
@@ -107,6 +115,7 @@ export async function GET(request: NextRequest) {
     }
   } else {
     console.log('No code found in callback')
+    return NextResponse.redirect(new URL('/?error=no_code&message=No authorization code received', request.url))
   }
 
   // 重定向回首页，带上成功标识

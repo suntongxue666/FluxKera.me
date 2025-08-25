@@ -153,7 +153,12 @@ export default function AIGenerator() {
         const { createBrowserClient } = await import('@supabase/ssr')
         const supabase = createBrowserClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          {
+            auth: {
+              flowType: 'pkce'
+            }
+          }
         )
         
         console.log('Supabase client created')
@@ -165,7 +170,8 @@ export default function AIGenerator() {
             queryParams: {
               access_type: 'offline',
               prompt: 'consent'
-            }
+            },
+            skipBrowserRedirect: false
           }
         })
         
