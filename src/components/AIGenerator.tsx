@@ -41,6 +41,8 @@ export default function AIGenerator() {
     seed: Math.floor(Math.random() * 1000000)
   })
   const [showLoginModal, setShowLoginModal] = useState(false)
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null)
+  const [countdownInterval, setCountdownInterval] = useState<NodeJS.Timeout | null>(null)
   
   // Set random seed on client initialization
   useEffect(() => {
@@ -56,6 +58,26 @@ export default function AIGenerator() {
       setShowLoginModal(false)
     }
   }, [user, showLoginModal])
+  
+  // 清理倒计时
+  useEffect(() => {
+    return () => {
+      if (countdownInterval) {
+        clearInterval(countdownInterval)
+      }
+    }
+  }, [countdownInterval])
+  
+  // 当错误状态改变时，清理倒计时
+  useEffect(() => {
+    if (!error && redirectCountdown !== null) {
+      setRedirectCountdown(null)
+      if (countdownInterval) {
+        clearInterval(countdownInterval)
+        setCountdownInterval(null)
+      }
+    }
+  }, [error, redirectCountdown, countdownInterval])
   
   const selectedResolution = FLUX_KREA_SETTINGS.resolutions.find(
     r => r.width === settings.width && r.height === settings.height
@@ -75,7 +97,30 @@ export default function AIGenerator() {
     
     // 检查用户积分是否足够
     if (credits < 10) {
-      setError('您的积分不足，请充值后再试。')
+      setError('Insufficient credits. Please recharge to continue.')
+      setRedirectCountdown(3)
+      
+      // 清理之前的倒计时
+      if (countdownInterval) {
+        clearInterval(countdownInterval)
+      }
+      
+      // 开始倒计时
+      const newCountdownInterval = setInterval(() => {
+        setRedirectCountdown(prev => {
+          if (prev === null || prev <= 1) {
+            clearInterval(newCountdownInterval)
+            setCountdownInterval(null)
+            // 跳转到Pricing页面
+            window.location.href = 'https://www.fluxkrea.me/pricing'
+            return null
+          }
+          return prev - 1
+        })
+      }, 1000)
+      
+      setCountdownInterval(newCountdownInterval)
+      
       return
     }
     
@@ -143,10 +188,8 @@ export default function AIGenerator() {
 
   const handleDownload = () => {
     if (generatedImage) {
-      const link = document.createElement('a')
-      link.href = generatedImage
-      link.download = `fluxkrea-${Date.now()}.png`
-      link.click()
+      // 在新窗口中打开图片，用户可以右键保存或浏览器会自动下载
+      window.open(generatedImage, '_blank')
     }
   }
   
@@ -241,10 +284,25 @@ export default function AIGenerator() {
 
             {/* 错误提示 */}
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
-                <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-red-700">{error}</p>
+              <div className={`mb-6 p-4 border rounded-lg flex items-start ${
+                redirectCountdown !== null 
+                  ? 'bg-orange-50 border-orange-200' 
+                  : 'bg-red-50 border-red-200'
+              }`}>
+                <AlertCircle className={`h-5 w-5 mr-2 flex-shrink-0 mt-0.5 ${
+                  redirectCountdown !== null ? 'text-orange-500' : 'text-red-500'
+                }`} />
+                <div className="flex-1">
+                  <p className={`${
+                    redirectCountdown !== null ? 'text-orange-700' : 'text-red-700'
+                  }`}>
+                    {error}
+                    {redirectCountdown !== null && (
+                      <span className="block mt-2 font-semibold">
+                        Redirecting to Pricing page in {redirectCountdown} seconds...
+                      </span>
+                    )}
+                  </p>
                 </div>
               </div>
             )}

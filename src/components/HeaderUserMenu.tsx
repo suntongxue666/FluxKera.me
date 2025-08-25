@@ -36,7 +36,8 @@ export default function HeaderUserMenu() {
     return (
       <button
         onClick={signIn}
-        className="flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 transition-colors shadow-sm"
+        className="flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-lg px-2 py-1 text-gray-700 font-medium hover:bg-gray-50 transition-colors shadow-sm"
+        style={{ padding: '4px 8px' }}
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20px" height="20px">
           <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
@@ -53,7 +54,7 @@ export default function HeaderUserMenu() {
   return (
     <div className="flex items-center gap-3">
       {/* 积分显示 */}
-      <div className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg">
+      <div className="flex items-center gap-1.5 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg" style={{ padding: '4px 6px' }}>
         <Coins className="w-4 h-4 text-yellow-600" />
         <span className="text-sm font-semibold text-yellow-700">{credits}</span>
       </div>

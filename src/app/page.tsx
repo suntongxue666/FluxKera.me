@@ -179,37 +179,37 @@ export default function HomePage() {
     }
   }, [refreshUser])
 
-  // 使用本地图片或者更稳定的图片URL
+  // FluxKrea 展示图片
   const galleryItems = [
     { 
       id: 1, 
       prompt: 'Photo of two beautiful lady having a tea party in a lush garden', 
-      imageUrl: '/gallery/image1.jpg' // 使用本地图片
+      imageUrl: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/FluxKrea%20ImagesShow/FluxkeraPic-01.webp'
     },
     { 
       id: 2, 
       prompt: 'portrait of a rugged middle-aged man, sharp blue eyes, wavy messy hair, thick beard with touches of gray, wearing casual shirt, cinematic natural lighting, ultra realistic, detailed skin texture, intense gaze.', 
-      imageUrl: '/gallery/image2.jpg' // 使用本地图片
+      imageUrl: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/FluxKrea%20ImagesShow/FluxkeraPic-02.webp'
     },
     { 
       id: 3, 
       prompt: 'Realistic photo of a cat as a pirate, everyday photo on a ship, complex chaotic scene with many details', 
-      imageUrl: '/gallery/image3.jpg' // 使用本地图片
+      imageUrl: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/FluxKrea%20ImagesShow/FluxkeraPic-03.webp'
     },
     { 
       id: 4, 
       prompt: 'a tiny astronaut hatching from an egg on the moon', 
-      imageUrl: 'https://images.unsplash.com/photo-1682687982501-1e58ab814714?w=800&h=800&fit=crop' 
+      imageUrl: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/FluxKrea%20ImagesShow/FluxkeraPic-04.webp'
     },
     { 
       id: 5, 
       prompt: 'black forest gateau cake spelling out the words "FLUX SCHNELL", tasty, food photography, dynamic shot', 
-      imageUrl: 'https://images.unsplash.com/photo-1624353365286-3f8d62daad51?w=800&h=800&fit=crop' 
+      imageUrl: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/FluxKrea%20ImagesShow/FluxkeraPic-05.webp'
     },
     { 
       id: 6, 
       prompt: 'womens street skateboarding final in Paris Olympics 2024', 
-      imageUrl: 'https://images.unsplash.com/photo-1682687981998-6b7b4b7d8c8f?w=800&h=800&fit=crop' 
+      imageUrl: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/FluxKrea%20ImagesShow/FluxkeraPic-06.webp'
     },
   ]
 

@@ -7,11 +7,11 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <a href="/" className="flex items-center space-x-2">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 w-8 h-8 rounded-lg flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13.5v6.5h2v-6.5h-2zm0 8.5v2h2v-2h-2z"/>
-                </svg>
-              </div>
+              <img 
+                src="https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/webstie-icon/FluxKrea%20log-120.png" 
+                alt="FluxKrea Logo" 
+                className="w-8 h-8 rounded-lg"
+              />
               <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 FluxKrea
               </span>
@@ -27,6 +27,9 @@ export default function Header() {
             </a>
             <a href="/gallery" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
               Gallery
+            </a>
+            <a href="https://www.fluxkrea.me/pricing" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
+              Pricing
             </a>
           </nav>
           

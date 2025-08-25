@@ -34,6 +34,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [credits, setCredits] = useState<number>(0)
   const [loading, setLoading] = useState(true)
+  
+  // 添加一个ref来跟踪当前用户状态，避免闭包问题
+  const userRef = React.useRef<User | null>(null)
+  
+  // 同步更新ref
+  React.useEffect(() => {
+    userRef.current = user
+  }, [user])
 
   // 刷新用户信息
   const refreshUser = async () => {
@@ -41,7 +49,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       // 添加超时保护
       const sessionPromise = supabase.auth.getSession()
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('getSession timeout')), 5000)
+        setTimeout(() => reject(new Error('getSession timeout')), 8000)
       )
 
       const { data: { session }, error: sessionError } = await Promise.race([
@@ -58,12 +66,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (!session?.user) {
-        // 设置一个超时，如果10秒内没有session，就结束loading
-        setTimeout(() => {
-          if (loading) {
-            setLoading(false)
-          }
-        }, 10000)
+        setUser(null)
+        setCredits(0)
+        setLoading(false)
         return
       }
 
@@ -207,26 +212,73 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // 初始化和监听认证状态变化
   useEffect(() => {
     let isInitialized = false
+    let refreshTimer: NodeJS.Timeout | null = null
+    let mounted = true
+
+    // 定期检查session状态，防止登录状态丢失
+    const startPeriodicCheck = () => {
+      if (refreshTimer) clearInterval(refreshTimer)
+      refreshTimer = setInterval(async () => {
+        if (!mounted) return
+        
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          console.log('Periodic check - Session exists:', !!session?.user, 'Current user state:', !!userRef.current)
+          
+          // 如果有session但当前状态显示没有user，恢复用户状态
+          if (session?.user && !userRef.current && mounted) {
+            console.log('Detected lost user state, refreshing user...')
+            await refreshUser()
+          } 
+          // 如果没有session但当前状态显示有user，清除用户状态
+          else if (!session?.user && userRef.current && mounted) {
+            console.log('Session expired, clearing user...')
+            setUser(null)
+            setCredits(0)
+            setLoading(false)
+          }
+          // 如果都存在，验证session是否有效
+          else if (session?.user && userRef.current && mounted) {
+            // 检查token是否即将过期（提前5分钟刷新）
+            const expiresAt = session.expires_at
+            const now = Math.floor(Date.now() / 1000)
+            if (expiresAt && (expiresAt - now) < 300) {
+              console.log('Token expiring soon, refreshing...')
+              await supabase.auth.refreshSession()
+            }
+          }
+        } catch (error) {
+          console.error('Periodic session check error:', error)
+        }
+      }, 60000) // 每60秒检查一次
+    }
 
     // 监听认证状态变化
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return
+        
+        console.log('Auth state change:', event, !!session?.user)
+
         if (event === 'INITIAL_SESSION') {
           isInitialized = true
           if (session?.user) {
             await refreshUser()
+            startPeriodicCheck()
           } else {
             setLoading(false)
           }
         } else if (event === 'SIGNED_IN') {
           await refreshUser()
+          startPeriodicCheck()
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
           setCredits(0)
           setLoading(false)
+          if (refreshTimer) clearInterval(refreshTimer)
         } else if (event === 'TOKEN_REFRESHED') {
           // 只有在已经初始化后才刷新，避免重复调用
-          if (isInitialized) {
+          if (isInitialized && session?.user) {
             console.log('Token refreshed, updating user data')
             await refreshUser()
           }
@@ -235,9 +287,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     )
 
     return () => {
+      mounted = false
       subscription.unsubscribe()
+      if (refreshTimer) clearInterval(refreshTimer)
     }
-  }, [])
+  }, []) // 保持空依赖数组，但使用mounted标志防止内存泄漏
 
   return (
     <UserContext.Provider value={{ user, credits, loading, refreshUser, signIn, signOut }}>
