@@ -16,11 +16,12 @@ function SuccessContent() {
 
   // 获取URL参数
   const subscriptionId = searchParams.get('subscription_id')
-  const token = searchParams.get('token')
+  const planName = searchParams.get('plan')
+  const pending = searchParams.get('pending')
 
   useEffect(() => {
     const confirmSubscription = async () => {
-      if (!subscriptionId || !token) {
+      if (!subscriptionId) {
         setError('Missing subscription information')
         setProcessing(false)
         return
@@ -116,7 +117,8 @@ function SuccessContent() {
             Subscription Successful!
           </h1>
           <p className="text-gray-600">
-            Thank you for subscribing to FluxKrea. Your credits have been added to your account.
+            Thank you for subscribing to FluxKrea{planName ? ` ${planName} plan` : ''}. 
+            {pending ? ' Your subscription is being processed and credits will be added shortly.' : ' Your credits have been added to your account.'}
           </p>
         </div>
 

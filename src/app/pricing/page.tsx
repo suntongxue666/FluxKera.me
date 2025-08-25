@@ -73,10 +73,10 @@ export default function PricingPage() {
       try {
         console.log('Starting to create PayPal plans...')
         
-        // 使用固定的计划ID，避免重复创建
+        // 使用最新创建的计划ID
         const fixedPlanIds = {
-          'Pro': 'P-9NE99223BR0481937NCWIMEY',
-          'Max': 'P-34X30940DK7247914NCWIMLY'
+          'Pro': 'P-41W26469F4549972UNCWIYTQ',
+          'Max': 'P-6MX09822GR0319232NCWIY4I'
         }
 
         console.log('Using fixed plan IDs:', fixedPlanIds)
