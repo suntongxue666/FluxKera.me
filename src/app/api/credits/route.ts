@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
+// 强制动态渲染
+export const dynamic = 'force-dynamic'
+
 // 获取用户积分
 export async function GET(request: NextRequest) {
   const cookieStore = cookies()
