@@ -103,11 +103,30 @@ export async function POST(request: NextRequest) {
       throw new Error('Failed to get PayPal access token')
     }
 
-    // 创建产品
-    const product = await createProduct(accessToken, planName)
+    // 创建产品（使用时间戳避免重复）
+    const timestamp = Date.now()
+    const productData = {
+      name: `FluxKrea ${planName} Plan ${timestamp}`,
+      description: `FluxKrea ${planName} subscription service`,
+      type: 'SERVICE',
+      category: 'SOFTWARE'
+    }
+
+    const productResponse = await fetch(`${PAYPAL_API_BASE}/v1/catalogs/products`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(productData),
+    })
+
+    const product = await productResponse.json()
     console.log('Product creation result:', product)
 
-    if (!product.id) {
+    if (!productResponse.ok || !product.id) {
+      console.error('Product creation failed:', product)
       throw new Error('Failed to create product: ' + JSON.stringify(product))
     }
 
@@ -116,6 +135,7 @@ export async function POST(request: NextRequest) {
     console.log('Plan creation result:', plan)
 
     if (!plan.id) {
+      console.error('Plan creation failed:', plan)
       throw new Error('Failed to create plan: ' + JSON.stringify(plan))
     }
 

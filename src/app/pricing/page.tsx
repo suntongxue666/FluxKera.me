@@ -96,11 +96,13 @@ export default function PricingPage() {
         const planIdMap: {[key: string]: string} = {}
         
         results.forEach(result => {
+          console.log('Plan creation result:', result)
           if (result.planId) {
             planIdMap[result.name] = result.planId
           }
         })
 
+        console.log('Final plan IDs:', planIdMap)
         setPlanIds(planIdMap)
         setLoadingPlans(false)
       } catch (error) {
