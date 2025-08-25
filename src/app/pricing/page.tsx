@@ -3,7 +3,7 @@
 import { Check, Star } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useUser } from '@/lib/user-context'
-import PayPalSubscriptionButton from '@/components/PayPalSubscriptionButton'
+import CustomSubscriptionButton from '@/components/CustomSubscriptionButton'
 
 
 const plans = [
@@ -63,37 +63,7 @@ const plans = [
 ]
 
 export default function PricingPage() {
-  const { user, refreshUser } = useUser()
-  const [planIds, setPlanIds] = useState<{[key: string]: string}>({})
-  const [loadingPlans, setLoadingPlans] = useState(true)
-
-  // 预创建PayPal计划
-  useEffect(() => {
-    const createPlans = async () => {
-      try {
-        console.log('Starting to create PayPal plans...')
-        
-        // 使用最新创建的计划ID
-        const fixedPlanIds = {
-          'Pro': 'P-41W26469F4549972UNCWIYTQ',
-          'Max': 'P-6MX09822GR0319232NCWIY4I'
-        }
-
-        console.log('Using fixed plan IDs:', fixedPlanIds)
-        setPlanIds(fixedPlanIds)
-        setLoadingPlans(false)
-
-        // 可选：验证计划是否存在，如果不存在则创建新的
-        // 这里暂时跳过验证，直接使用固定ID
-        
-      } catch (error) {
-        console.error('Error in createPlans:', error)
-        setLoadingPlans(false)
-      }
-    }
-
-    createPlans()
-  }, [])
+  const { refreshUser } = useUser()
 
   const handleSubscriptionSuccess = (subscriptionId: string) => {
     console.log('Subscription successful:', subscriptionId)
@@ -181,34 +151,13 @@ export default function PricingPage() {
                   </button>
                 ) : (
                   <div className="mt-4">
-                    {loadingPlans ? (
-                      <div className="w-full">
-                        <button className="w-full bg-blue-400 text-white py-3 px-4 rounded-lg cursor-not-allowed flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Setting up PayPal...
-                        </button>
-                        <p className="text-xs text-gray-500 text-center mt-1">This may take a few seconds</p>
-                      </div>
-                    ) : planIds[plan.name] ? (
-                      <PayPalSubscriptionButton
-                        planName={plan.name}
-                        planId={planIds[plan.name]}
-                        price={plan.price}
-                        credits={plan.credits}
-                        onSuccess={handleSubscriptionSuccess}
-                        onError={handleSubscriptionError}
-                      />
-                    ) : (
-                      <div className="w-full">
-                        <button 
-                          className="w-full bg-red-500 text-white py-3 px-4 rounded-lg cursor-pointer hover:bg-red-600"
-                          onClick={() => window.location.reload()}
-                        >
-                          Setup Failed - Click to Retry
-                        </button>
-                        <p className="text-xs text-gray-500 text-center mt-1">PayPal plan creation failed</p>
-                      </div>
-                    )}
+                    <CustomSubscriptionButton
+                      planName={plan.name}
+                      price={plan.price}
+                      credits={plan.credits}
+                      onSuccess={handleSubscriptionSuccess}
+                      onError={handleSubscriptionError}
+                    />
                   </div>
                 )}
               </div>

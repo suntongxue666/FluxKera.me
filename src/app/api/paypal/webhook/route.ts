@@ -32,15 +32,41 @@ async function handleSubscriptionActivated(eventData: any) {
     const subscriptionId = eventData.resource.id
     console.log('Processing subscription activation:', subscriptionId)
     
-    // 从数据库获取订阅信息
-    const { data: user, error } = await supabase
+    // 从数据库获取订阅信息 - 使用更宽松的查询
+    let { data: user, error } = await supabase
       .from('users')
       .select('*')
       .eq('subscription_id', subscriptionId)
       .single()
 
+    // 如果通过subscription_id找不到，尝试通过email查找最近的用户
     if (error || !user) {
-      console.error('User not found for subscription:', subscriptionId, error)
+      console.log('User not found by subscription_id, trying alternative methods...')
+      
+      // 尝试从PayPal事件数据中获取email
+      const subscriberEmail = eventData.resource.subscriber?.email_address
+      if (subscriberEmail) {
+        const { data: userByEmail, error: emailError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', subscriberEmail)
+          .single()
+        
+        if (!emailError && userByEmail) {
+          user = userByEmail
+          console.log('Found user by email:', user.email)
+          
+          // 更新用户的subscription_id
+          await supabase
+            .from('users')
+            .update({ subscription_id: subscriptionId })
+            .eq('id', user.id)
+        }
+      }
+    }
+
+    if (!user) {
+      console.error('User not found for subscription:', subscriptionId)
       return
     }
 
