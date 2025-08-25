@@ -28,32 +28,56 @@ export async function POST(request: NextRequest) {
       }
     })
     
-    // 使用 upsert 一次性处理用户创建/更新，减少数据库查询
-    const { data: userData, error: upsertError } = await supabaseAdmin
+    // 先检查用户是否存在
+    const { data: existingUser } = await supabaseAdmin
       .from('users')
-      .upsert({
-        id,
-        email: email || '',
-        google_id: google_id || id,
-        avatar_url: avatar_url || null,
-        credits: 20, // 新用户获得20积分，现有用户保持原有积分
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'id',
-        ignoreDuplicates: false
-      })
-      .select()
+      .select('*')
+      .eq('id', id)
       .single()
     
-    if (upsertError) {
-      console.error('Error upserting user:', upsertError)
-      return NextResponse.json({ error: 'Failed to upsert user: ' + upsertError.message }, { status: 500 })
-    }
-    
-    console.log('User upserted successfully:', userData)
-    
-    // 如果是新用户（刚创建），记录积分交易
-    if (userData.credits === 20) {
+    let userData
+    if (existingUser) {
+      // 更新现有用户，保持积分不变，只更新头像等信息
+      const { data, error: updateError } = await supabaseAdmin
+        .from('users')
+        .update({
+          email: email || existingUser.email,
+          google_id: google_id || existingUser.google_id,
+          avatar_url: avatar_url || existingUser.avatar_url,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single()
+      
+      if (updateError) {
+        console.error('Error updating user:', updateError)
+        return NextResponse.json({ error: 'Failed to update user: ' + updateError.message }, { status: 500 })
+      }
+      userData = data
+    } else {
+      // 创建新用户
+      const { data, error: insertError } = await supabaseAdmin
+        .from('users')
+        .insert({
+          id,
+          email: email || '',
+          google_id: google_id || id,
+          avatar_url: avatar_url || null,
+          credits: 20, // 新用户获得20积分
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single()
+      
+      if (insertError) {
+        console.error('Error creating user:', insertError)
+        return NextResponse.json({ error: 'Failed to create user: ' + insertError.message }, { status: 500 })
+      }
+      userData = data
+      
+      // 记录新用户积分交易
       const { error: transactionError } = await supabaseAdmin
         .from('credit_transactions')
         .insert({
@@ -68,6 +92,8 @@ export async function POST(request: NextRequest) {
         console.error('Error creating credit transaction:', transactionError)
       }
     }
+    
+    console.log('User synced successfully:', userData)
     
     return NextResponse.json({ user: userData })
   } catch (error) {

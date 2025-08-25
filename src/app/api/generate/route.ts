@@ -150,14 +150,34 @@ export async function POST(request: NextRequest) {
       console.error('Error saving generation record:', saveError)
     }
 
-    // 使用存储过程扣除用户积分并记录交易
-    const { error: creditError } = await supabaseServer.rpc('decrement_user_credits', {
-      user_id_param: user.id,
-      amount: 10
-    })
+    // 扣除用户积分
+    const { error: creditError } = await supabaseServer
+      .from('users')
+      .update({ 
+        credits: user.credits - 10,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user.id)
     
     if (creditError) {
       console.error('Error updating user credits:', creditError)
+    } else {
+      console.log(`Successfully deducted 10 credits from user ${user.id}`)
+    }
+    
+    // 记录积分交易
+    const { error: transactionError } = await supabaseServer
+      .from('credit_transactions')
+      .insert({
+        user_id: user.id,
+        type: 'debit',
+        amount: 10,
+        description: 'AI图片生成消费',
+        created_at: new Date().toISOString()
+      })
+    
+    if (transactionError) {
+      console.error('Error recording credit transaction:', transactionError)
     }
 
     // 再次获取用户信息以确保返回最新的积分

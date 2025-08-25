@@ -24,7 +24,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       auth: {
-        flowType: 'pkce'
+        flowType: 'pkce',
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
       }
     }
   )
@@ -72,13 +75,20 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         .single()
 
       if (data && !error) {
+        console.log('User data from database:', data)
         setUser(data as User)
         setCredits(data.credits)
         setLoading(false)
         return
+      } else {
+        console.log('Database query failed:', error)
       }
 
       // 如果数据库查询失败，使用 API 同步
+      console.log('Session user metadata:', session.user.user_metadata)
+      const avatarUrl = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture
+      console.log('Extracted avatar URL:', avatarUrl)
+
       const response = await fetch('/api/sync-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -86,18 +96,21 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           id: session.user.id,
           email: session.user.email,
           google_id: session.user.user_metadata?.sub,
-          avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
+          avatar_url: avatarUrl,
         }),
       })
 
       if (response.ok) {
         const { user: syncedUser } = await response.json()
+        console.log('Synced user data:', syncedUser)
         if (syncedUser) {
           setUser(syncedUser as User)
           setCredits(syncedUser.credits)
           setLoading(false)
           return
         }
+      } else {
+        console.error('User sync failed:', await response.text())
       }
 
       // fallback
@@ -214,6 +227,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         } else if (event === 'TOKEN_REFRESHED') {
           // 只有在已经初始化后才刷新，避免重复调用
           if (isInitialized) {
+            console.log('Token refreshed, updating user data')
             await refreshUser()
           }
         }

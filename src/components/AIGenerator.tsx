@@ -50,6 +50,13 @@ export default function AIGenerator() {
     }))
   }, [])
   
+  // 监听用户登录状态变化，登录后关闭模态框
+  useEffect(() => {
+    if (user && showLoginModal) {
+      setShowLoginModal(false)
+    }
+  }, [user, showLoginModal])
+  
   const selectedResolution = FLUX_KREA_SETTINGS.resolutions.find(
     r => r.width === settings.width && r.height === settings.height
   ) || FLUX_KREA_SETTINGS.resolutions[0]
@@ -143,53 +150,13 @@ export default function AIGenerator() {
     }
   }
   
-  const handleGoogleLogin = () => {
-    // 使用setTimeout来避免React事件处理的问题
-    setTimeout(async () => {
-      try {
-        console.log('=== GOOGLE LOGIN START ===')
-        
-        // 直接创建Supabase客户端
-        const { createBrowserClient } = await import('@supabase/ssr')
-        const supabase = createBrowserClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          {
-            auth: {
-              flowType: 'pkce'
-            }
-          }
-        )
-        
-        console.log('Supabase client created')
-        
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: `${window.location.origin}/auth/callback`,
-            queryParams: {
-              access_type: 'offline',
-              prompt: 'consent'
-            },
-            skipBrowserRedirect: false
-          }
-        })
-        
-        if (error) {
-          console.error('OAuth error:', error)
-          alert('登录失败: ' + error.message)
-        } else if (data?.url) {
-          console.log('Redirecting to Google...')
-          window.location.href = data.url
-        } else {
-          console.error('No redirect URL received')
-          alert('登录失败: 未收到重定向URL')
-        }
-      } catch (error) {
-        console.error('Login error:', error)
-        alert('登录过程中发生错误: ' + (error as Error).message)
-      }
-    }, 0)
+  const handleGoogleLogin = async () => {
+    try {
+      await signIn()
+      setShowLoginModal(false)
+    } catch (error) {
+      console.error('Login error:', error)
+    }
   }
   
   const handleCloseModal = () => {
