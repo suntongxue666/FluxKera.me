@@ -25,9 +25,9 @@ async function getPayPalAccessToken() {
 }
 
 // 创建订阅计划
-async function createSubscriptionPlan(accessToken: string, planName: string, price: number) {
+async function createSubscriptionPlan(accessToken: string, planName: string, price: number, productId: string) {
   const planData = {
-    product_id: `fluxkrea-${planName.toLowerCase()}`,
+    product_id: productId,
     name: `FluxKrea ${planName} Plan`,
     description: `FluxKrea ${planName} monthly subscription`,
     status: 'ACTIVE',
@@ -55,6 +55,8 @@ async function createSubscriptionPlan(accessToken: string, planName: string, pri
     },
   }
 
+  console.log('Creating subscription plan with data:', planData)
+
   const response = await fetch(`${PAYPAL_API_BASE}/v1/billing/plans`, {
     method: 'POST',
     headers: {
@@ -66,7 +68,11 @@ async function createSubscriptionPlan(accessToken: string, planName: string, pri
     body: JSON.stringify(planData),
   })
 
-  return await response.json()
+  const result = await response.json()
+  console.log('Plan creation response status:', response.status)
+  console.log('Plan creation result:', result)
+
+  return result
 }
 
 // 创建订阅
@@ -128,16 +134,21 @@ export async function POST(request: NextRequest) {
     // 创建或获取订阅计划
     let planId = `fluxkrea-${planName.toLowerCase()}-plan`
     
-    // 首先尝试创建产品
+    // 首先尝试创建产品（使用唯一ID避免重复）
+    const timestamp = Date.now()
+    const productId = `fluxkrea-${planName.toLowerCase()}-${timestamp}`
+    
     const productData = {
-      id: `fluxkrea-${planName.toLowerCase()}`,
-      name: `FluxKrea ${planName}`,
+      id: productId,
+      name: `FluxKrea ${planName} Plan`,
       description: `FluxKrea ${planName} subscription with ${credits} credits per month`,
       type: 'SERVICE',
       category: 'SOFTWARE',
     }
 
+    let productCreated = false
     try {
+      console.log('Creating product with ID:', productId)
       const productResponse = await fetch(`${PAYPAL_API_BASE}/v1/catalogs/products`, {
         method: 'POST',
         headers: {
@@ -149,23 +160,35 @@ export async function POST(request: NextRequest) {
       })
       
       const productResult = await productResponse.json()
+      console.log('Product creation response status:', productResponse.status)
       console.log('Product creation result:', productResult)
       
-      if (!productResponse.ok && productResponse.status !== 409) {
+      if (productResponse.ok) {
+        productCreated = true
+        console.log('Product created successfully:', productId)
+      } else if (productResponse.status === 409) {
+        console.log('Product already exists, continuing...')
+        productCreated = true
+      } else {
         console.error('Product creation failed:', productResult)
+        // 继续执行，使用默认产品ID
       }
     } catch (error) {
-      console.log('Product creation error (might already exist):', error)
+      console.log('Product creation error:', error)
+      // 继续执行，使用默认产品ID
     }
+
+    // 如果产品创建失败，使用简单的产品ID
+    const finalProductId = productCreated ? productId : `fluxkrea-${planName.toLowerCase()}`
 
     // 创建订阅计划
     console.log('Creating subscription plan...')
-    const plan = await createSubscriptionPlan(accessToken, planName, price)
+    const plan = await createSubscriptionPlan(accessToken, planName, price, finalProductId)
     console.log('Plan creation result:', plan)
     
     if (plan.id) {
       planId = plan.id
-    } else if (plan.error) {
+    } else if (plan.error || plan.details) {
       console.error('Plan creation failed:', plan)
       throw new Error(`Plan creation failed: ${JSON.stringify(plan)}`)
     }

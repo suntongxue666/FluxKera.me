@@ -1,8 +1,9 @@
 'use client'
 
 import { Check, Star } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useUser } from '@/lib/user-context'
+import PayPalSubscriptionButton from '@/components/PayPalSubscriptionButton'
 
 
 const plans = [
@@ -63,60 +64,62 @@ const plans = [
 
 export default function PricingPage() {
   const { user, refreshUser } = useUser()
-  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle')
-  const [paymentMessage, setPaymentMessage] = useState('')
-  const [processingPlan, setProcessingPlan] = useState<string | null>(null)
+  const [planIds, setPlanIds] = useState<{[key: string]: string}>({})
+  const [loadingPlans, setLoadingPlans] = useState(true)
 
-  const handlePlanSelect = async (planName: string, price: number, credits: number) => {
-    if (!user) {
-      alert('Please sign in to subscribe to a plan')
-      return
-    }
-    
-    setPaymentStatus('processing')
-    setPaymentMessage('Creating subscription...')
-    setProcessingPlan(planName)
-    
-    try {
-      // 直接创建订阅并跳转到PayPal
-      const response = await fetch('/api/paypal/create-subscription', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          planName,
-          price,
-          credits,
-          userId: user.id,
-          userEmail: user.email
-        }),
-      })
+  // 预创建PayPal计划
+  useEffect(() => {
+    const createPlans = async () => {
+      try {
+        const plansToCreate = [
+          { name: 'Pro', price: 9.9 },
+          { name: 'Max', price: 29.9 }
+        ]
 
-      const result = await response.json()
-      
-      if (result.success && result.approvalUrl) {
-        // 保存订阅信息到localStorage，用于成功页面激活
-        localStorage.setItem('pendingSubscription', JSON.stringify({
-          userEmail: user.email,
-          planName,
-          credits,
-          subscriptionId: result.subscriptionId
-        }))
+        const planPromises = plansToCreate.map(async (plan) => {
+          const response = await fetch('/api/paypal/create-plan', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              planName: plan.name,
+              price: plan.price
+            }),
+          })
+          
+          const result = await response.json()
+          return { name: plan.name, planId: result.planId }
+        })
+
+        const results = await Promise.all(planPromises)
+        const planIdMap: {[key: string]: string} = {}
         
-        // 跳转到PayPal支付页面
-        window.location.href = result.approvalUrl
-      } else {
-        setPaymentStatus('error')
-        setPaymentMessage('Failed to create subscription. Please try again.')
-        setProcessingPlan(null)
+        results.forEach(result => {
+          if (result.planId) {
+            planIdMap[result.name] = result.planId
+          }
+        })
+
+        setPlanIds(planIdMap)
+        setLoadingPlans(false)
+      } catch (error) {
+        console.error('Error creating plans:', error)
+        setLoadingPlans(false)
       }
-    } catch (error) {
-      console.error('Error creating subscription:', error)
-      setPaymentStatus('error')
-      setPaymentMessage('Network error. Please try again.')
-      setProcessingPlan(null)
     }
+
+    createPlans()
+  }, [])
+
+  const handleSubscriptionSuccess = (subscriptionId: string) => {
+    console.log('Subscription successful:', subscriptionId)
+    refreshUser()
+  }
+
+  const handleSubscriptionError = (error: any) => {
+    console.error('Subscription error:', error)
+    alert('Subscription failed. Please try again.')
   }
 
   return (
@@ -194,42 +197,26 @@ export default function PricingPage() {
                     {plan.buttonText}
                   </button>
                 ) : (
-                  <>
-                    <button
-                      onClick={() => handlePlanSelect(plan.name, plan.price, plan.credits)}
-                      disabled={paymentStatus === 'processing'}
-                      className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
-                        paymentStatus === 'processing' && processingPlan === plan.name
-                          ? 'bg-gray-400 text-white cursor-not-allowed'
-                          : plan.name === 'Pro'
-                          ? 'bg-purple-600 text-white hover:bg-purple-700'
-                          : 'bg-orange-500 text-white hover:bg-orange-600'
-                      }`}
-                    >
-                      {paymentStatus === 'processing' && processingPlan === plan.name ? 'Creating Subscription...' : plan.buttonText}
-                    </button>
-                    
-                    {/* 状态消息 - 只显示在当前处理的计划上 */}
-                    {paymentMessage && processingPlan === plan.name && (
-                      <div className={`mt-4 p-3 rounded-lg ${
-                        paymentStatus === 'success' 
-                          ? 'bg-green-100 border border-green-300' 
-                          : paymentStatus === 'error'
-                          ? 'bg-red-100 border border-red-300'
-                          : 'bg-blue-100 border border-blue-300'
-                      }`}>
-                        <p className={`text-sm ${
-                          paymentStatus === 'success' 
-                            ? 'text-green-700' 
-                            : paymentStatus === 'error'
-                            ? 'text-red-700'
-                            : 'text-blue-700'
-                        }`}>
-                          {paymentMessage}
-                        </p>
-                      </div>
+                  <div className="mt-4">
+                    {loadingPlans ? (
+                      <button className="w-full bg-gray-400 text-white py-3 px-4 rounded-lg cursor-not-allowed">
+                        Loading PayPal...
+                      </button>
+                    ) : planIds[plan.name] ? (
+                      <PayPalSubscriptionButton
+                        planName={plan.name}
+                        planId={planIds[plan.name]}
+                        price={plan.price}
+                        credits={plan.credits}
+                        onSuccess={handleSubscriptionSuccess}
+                        onError={handleSubscriptionError}
+                      />
+                    ) : (
+                      <button className="w-full bg-red-500 text-white py-3 px-4 rounded-lg">
+                        Plan Setup Failed
+                      </button>
                     )}
-                  </>
+                  </div>
                 )}
               </div>
             </div>
