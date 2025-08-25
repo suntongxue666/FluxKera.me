@@ -2,27 +2,108 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Check, ArrowRight } from 'lucide-react'
+import { Check, ArrowRight, Loader } from 'lucide-react'
 import Link from 'next/link'
+import { useUser } from '@/lib/user-context'
 
 function SuccessContent() {
   const searchParams = useSearchParams()
-  const [countdown, setCountdown] = useState(5)
+  const { refreshUser } = useUser()
+  const [countdown, setCountdown] = useState(10)
+  const [processing, setProcessing] = useState(true)
+  const [subscriptionConfirmed, setSubscriptionConfirmed] = useState(false)
+  const [error, setError] = useState('')
+
+  // 获取URL参数
+  const subscriptionId = searchParams.get('subscription_id')
+  const token = searchParams.get('token')
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(timer)
-          window.location.href = '/'
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
+    const confirmSubscription = async () => {
+      if (!subscriptionId || !token) {
+        setError('Missing subscription information')
+        setProcessing(false)
+        return
+      }
 
-    return () => clearInterval(timer)
-  }, [])
+      try {
+        // 这里我们可以调用API来确认订阅状态
+        // 暂时先刷新用户数据
+        await refreshUser()
+        setSubscriptionConfirmed(true)
+        setProcessing(false)
+      } catch (error) {
+        console.error('Error confirming subscription:', error)
+        setError('Failed to confirm subscription')
+        setProcessing(false)
+      }
+    }
+
+    confirmSubscription()
+  }, [subscriptionId, token, refreshUser])
+
+  useEffect(() => {
+    if (!processing && subscriptionConfirmed) {
+      const timer = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(timer)
+            window.location.href = '/'
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+
+      return () => clearInterval(timer)
+    }
+  }, [processing, subscriptionConfirmed])
+
+  if (processing) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center py-12 px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="mb-6">
+            <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Loader className="w-8 h-8 text-white animate-spin" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Processing Your Subscription
+            </h1>
+            <p className="text-gray-600">
+              Please wait while we confirm your subscription...
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center py-12 px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="mb-6">
+            <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-white text-2xl">!</span>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Subscription Error
+            </h1>
+            <p className="text-gray-600 mb-4">
+              {error}
+            </p>
+            <Link 
+              href="/pricing"
+              className="inline-block bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+            >
+              Try Again
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center py-12 px-4">
@@ -38,6 +119,14 @@ function SuccessContent() {
             Thank you for subscribing to FluxKrea. Your credits have been added to your account.
           </p>
         </div>
+
+        {subscriptionId && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p className="text-blue-700 font-semibold text-sm">
+              Subscription ID: {subscriptionId.substring(0, 20)}...
+            </p>
+          </div>
+        )}
 
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
           <p className="text-green-700 font-semibold">

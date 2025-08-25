@@ -65,6 +65,7 @@ export default function PricingPage() {
   const { user, refreshUser } = useUser()
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle')
   const [paymentMessage, setPaymentMessage] = useState('')
+  const [processingPlan, setProcessingPlan] = useState<string | null>(null)
 
   const handlePlanSelect = async (planName: string, price: number, credits: number) => {
     if (!user) {
@@ -74,6 +75,7 @@ export default function PricingPage() {
     
     setPaymentStatus('processing')
     setPaymentMessage('Creating subscription...')
+    setProcessingPlan(planName)
     
     try {
       // 直接创建订阅并跳转到PayPal
@@ -94,16 +96,26 @@ export default function PricingPage() {
       const result = await response.json()
       
       if (result.success && result.approvalUrl) {
+        // 保存订阅信息到localStorage，用于成功页面激活
+        localStorage.setItem('pendingSubscription', JSON.stringify({
+          userEmail: user.email,
+          planName,
+          credits,
+          subscriptionId: result.subscriptionId
+        }))
+        
         // 跳转到PayPal支付页面
         window.location.href = result.approvalUrl
       } else {
         setPaymentStatus('error')
         setPaymentMessage('Failed to create subscription. Please try again.')
+        setProcessingPlan(null)
       }
     } catch (error) {
       console.error('Error creating subscription:', error)
       setPaymentStatus('error')
       setPaymentMessage('Network error. Please try again.')
+      setProcessingPlan(null)
     }
   }
 
@@ -187,18 +199,18 @@ export default function PricingPage() {
                       onClick={() => handlePlanSelect(plan.name, plan.price, plan.credits)}
                       disabled={paymentStatus === 'processing'}
                       className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors ${
-                        paymentStatus === 'processing'
+                        paymentStatus === 'processing' && processingPlan === plan.name
                           ? 'bg-gray-400 text-white cursor-not-allowed'
                           : plan.name === 'Pro'
                           ? 'bg-purple-600 text-white hover:bg-purple-700'
                           : 'bg-orange-500 text-white hover:bg-orange-600'
                       }`}
                     >
-                      {paymentStatus === 'processing' ? 'Creating Subscription...' : plan.buttonText}
+                      {paymentStatus === 'processing' && processingPlan === plan.name ? 'Creating Subscription...' : plan.buttonText}
                     </button>
                     
-                    {/* 状态消息 */}
-                    {paymentMessage && (
+                    {/* 状态消息 - 只显示在当前处理的计划上 */}
+                    {paymentMessage && processingPlan === plan.name && (
                       <div className={`mt-4 p-3 rounded-lg ${
                         paymentStatus === 'success' 
                           ? 'bg-green-100 border border-green-300' 
