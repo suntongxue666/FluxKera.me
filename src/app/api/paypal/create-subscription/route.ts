@@ -202,6 +202,42 @@ export async function POST(request: NextRequest) {
       const approvalUrl = subscription.links?.find((link: any) => link.rel === 'approve')?.href
       console.log('Subscription created successfully:', { id: subscription.id, approvalUrl })
       
+      // 保存订阅信息到数据库
+      try {
+        const { createClient } = await import('@supabase/supabase-js')
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_SECRET!
+        )
+
+        console.log('Saving subscription to database:', {
+          userId,
+          subscriptionId: subscription.id,
+          planName,
+          userEmail
+        })
+
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({
+            subscription_id: subscription.id,
+            subscription_plan: planName,
+            subscription_status: 'pending',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userId)
+
+        if (updateError) {
+          console.error('Failed to save subscription to database:', updateError)
+          // 不抛出错误，因为订阅已经创建成功
+        } else {
+          console.log('Subscription saved to database successfully')
+        }
+      } catch (dbError) {
+        console.error('Database error:', dbError)
+        // 不抛出错误，因为订阅已经创建成功
+      }
+      
       return NextResponse.json({
         success: true,
         subscriptionId: subscription.id,

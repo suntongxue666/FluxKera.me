@@ -71,42 +71,48 @@ export default function PricingPage() {
   useEffect(() => {
     const createPlans = async () => {
       try {
+        console.log('Starting to create PayPal plans...')
         const plansToCreate = [
           { name: 'Pro', price: 9.9 },
           { name: 'Max', price: 29.9 }
         ]
 
-        const planPromises = plansToCreate.map(async (plan) => {
-          const response = await fetch('/api/paypal/create-plan', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              planName: plan.name,
-              price: plan.price
-            }),
-          })
-          
-          const result = await response.json()
-          return { name: plan.name, planId: result.planId }
-        })
-
-        const results = await Promise.all(planPromises)
         const planIdMap: {[key: string]: string} = {}
-        
-        results.forEach(result => {
-          console.log('Plan creation result:', result)
-          if (result.planId) {
-            planIdMap[result.name] = result.planId
+
+        // 串行创建计划，避免并发问题
+        for (const plan of plansToCreate) {
+          try {
+            console.log(`Creating plan: ${plan.name}`)
+            const response = await fetch('/api/paypal/create-plan', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                planName: plan.name,
+                price: plan.price
+              }),
+            })
+            
+            const result = await response.json()
+            console.log(`Plan ${plan.name} creation result:`, result)
+            
+            if (result.success && result.planId) {
+              planIdMap[plan.name] = result.planId
+              console.log(`✅ ${plan.name} plan created successfully: ${result.planId}`)
+            } else {
+              console.error(`❌ Failed to create ${plan.name} plan:`, result)
+            }
+          } catch (planError) {
+            console.error(`❌ Error creating ${plan.name} plan:`, planError)
           }
-        })
+        }
 
         console.log('Final plan IDs:', planIdMap)
         setPlanIds(planIdMap)
         setLoadingPlans(false)
       } catch (error) {
-        console.error('Error creating plans:', error)
+        console.error('Error in createPlans:', error)
         setLoadingPlans(false)
       }
     }
@@ -201,9 +207,13 @@ export default function PricingPage() {
                 ) : (
                   <div className="mt-4">
                     {loadingPlans ? (
-                      <button className="w-full bg-gray-400 text-white py-3 px-4 rounded-lg cursor-not-allowed">
-                        Loading PayPal...
-                      </button>
+                      <div className="w-full">
+                        <button className="w-full bg-blue-400 text-white py-3 px-4 rounded-lg cursor-not-allowed flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Setting up PayPal...
+                        </button>
+                        <p className="text-xs text-gray-500 text-center mt-1">This may take a few seconds</p>
+                      </div>
                     ) : planIds[plan.name] ? (
                       <PayPalSubscriptionButton
                         planName={plan.name}
@@ -214,9 +224,15 @@ export default function PricingPage() {
                         onError={handleSubscriptionError}
                       />
                     ) : (
-                      <button className="w-full bg-red-500 text-white py-3 px-4 rounded-lg">
-                        Plan Setup Failed
-                      </button>
+                      <div className="w-full">
+                        <button 
+                          className="w-full bg-red-500 text-white py-3 px-4 rounded-lg cursor-pointer hover:bg-red-600"
+                          onClick={() => window.location.reload()}
+                        >
+                          Setup Failed - Click to Retry
+                        </button>
+                        <p className="text-xs text-gray-500 text-center mt-1">PayPal plan creation failed</p>
+                      </div>
                     )}
                   </div>
                 )}

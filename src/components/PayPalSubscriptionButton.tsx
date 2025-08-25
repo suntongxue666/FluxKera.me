@@ -57,21 +57,49 @@ export default function PayPalSubscriptionButton({
           layout: 'vertical',
           label: 'subscribe'
         },
-        createSubscription: function(data: any, actions: any) {
-          return actions.subscription.create({
-            'plan_id': planId,
-            'subscriber': {
-              'email_address': user.email
-            },
-            'application_context': {
-              'brand_name': 'FluxKrea',
-              'locale': 'en-US',
-              'shipping_preference': 'NO_SHIPPING',
-              'user_action': 'SUBSCRIBE_NOW',
-              'return_url': `${window.location.origin}/subscription/success`,
-              'cancel_url': `${window.location.origin}/subscription/cancel`
+        createSubscription: async function(data: any, actions: any) {
+          try {
+            // 使用我们的后端API创建订阅
+            const response = await fetch('/api/paypal/create-subscription', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                planName,
+                price,
+                credits,
+                userId: user.id,
+                userEmail: user.email
+              }),
+            })
+
+            const result = await response.json()
+            
+            if (result.success && result.subscriptionId) {
+              console.log('Subscription created via backend:', result.subscriptionId)
+              return result.subscriptionId
+            } else {
+              throw new Error(result.error || 'Failed to create subscription')
             }
-          })
+          } catch (error) {
+            console.error('Error creating subscription:', error)
+            // 回退到直接使用PayPal SDK
+            return actions.subscription.create({
+              'plan_id': planId,
+              'subscriber': {
+                'email_address': user.email
+              },
+              'application_context': {
+                'brand_name': 'FluxKrea',
+                'locale': 'en-US',
+                'shipping_preference': 'NO_SHIPPING',
+                'user_action': 'SUBSCRIBE_NOW',
+                'return_url': `${window.location.origin}/subscription/success`,
+                'cancel_url': `${window.location.origin}/subscription/cancel`
+              }
+            })
+          }
         },
         onApprove: async function(data: any, actions: any) {
           console.log('Subscription approved:', data.subscriptionID)
