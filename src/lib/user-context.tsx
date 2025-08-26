@@ -38,41 +38,51 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // 刷新用户信息（数据库）
-  const refreshUser = async () => {
+  // 刷新用户信息（数据库）- 传入session参数避免重复调用getSession
+  const refreshUser = async (sessionUser = null) => {
     try {
       setLoading(true)
-      console.log('=== REFRESH USER START ===')
+      console.log('=== REFRESH USER START ===', sessionUser ? 'with session' : 'without session')
 
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      console.log('Session from getSession:', session) // ✅ 增强调试
+      let user = sessionUser
       
-      if (sessionError) {
-        console.error('Error getting session:', sessionError)
-        setLoading(false)
-        return // 🚩 不要清空user，保持当前状态
+      // 只有在没有传入session时才调用getSession
+      if (!user) {
+        console.log('No session provided, calling getSession...')
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        console.log('Session from getSession:', session?.user?.email)
+        
+        if (sessionError) {
+          console.error('Error getting session:', sessionError)
+          setLoading(false)
+          return
+        }
+
+        if (!session?.user) {
+          console.log('No session user found')
+          setLoading(false)
+          return
+        }
+        
+        user = session.user
       }
 
-      if (!session?.user) {
-        console.log('No session yet - wait for SIGNED_IN event')
-        setLoading(false)
-        return // 🚩 不要清空user，但要设置loading=false
-      }
+      console.log('Using user for DB query:', user.email)
 
       // 拉取数据库用户信息
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', session.user.id)
+        .eq('id', user.id)
         .single()
 
-      console.log('DB query result:', { data, error }) // 🔍 增强调试
+      console.log('DB query result:', { data, error })
 
       if (data && !error) {
         console.log('Fetched user from DB:', data)
         setUser(data as User)
         setCredits(data.credits)
-        localStorage.setItem('app_user', JSON.stringify(data)) // ✅ 使用 app_user 更新缓存
+        localStorage.setItem('app_user', JSON.stringify(data))
         setLoading(false)
         console.log('=== REFRESH USER SUCCESS ===')
         return
@@ -87,10 +97,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: session.user.id,
-          email: session.user.email,
-          google_id: session.user.user_metadata?.sub,
-          avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture,
+          id: user.id,
+          email: user.email,
+          google_id: user.user_metadata?.sub,
+          avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture,
         }),
       })
 
@@ -196,25 +206,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           console.log('Session available, refreshing user data...')
-          await refreshUser()
+          // 传入session.user避免重复调用getSession
+          await refreshUser(session?.user)
         } else if (event === 'SIGNED_OUT') {
           console.log('User signed out, clearing data...')
           setUser(null)
           setCredits(0)
           localStorage.removeItem('app_user')
+          setLoading(false)
         } else if (event === 'INITIAL_SESSION') {
           console.log('Initial session event, checking session...')
-          // 等待一下让session稳定
-          setTimeout(async () => {
-            const { data: { session: currentSession } } = await supabase.auth.getSession()
-            if (currentSession?.user) {
-              console.log('Initial session found, refreshing user...')
-              await refreshUser()
-            } else {
-              console.log('No initial session, keeping loading state')
-              setLoading(false)
-            }
-          }, 1000)
+          if (session?.user) {
+            console.log('Initial session found, refreshing user...')
+            await refreshUser(session.user)
+          } else {
+            console.log('No initial session, setting loading to false')
+            setLoading(false)
+          }
         }
       }
     )
@@ -227,7 +235,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       
       if (session?.user) {
         console.log('Session found on initial load, refreshing user...')
-        await refreshUser()
+        await refreshUser(session.user) // 传入session.user
       } else {
         console.log('No session on initial load, setting loading to false')
         setLoading(false)
