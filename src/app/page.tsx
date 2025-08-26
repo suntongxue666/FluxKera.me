@@ -172,24 +172,40 @@ export default function HomePage() {
     async function debugAuth() {
       console.log('=== 🔧 DEBUG AUTH START ===')
       
-      const { data: sessionData } = await supabase.auth.getSession()
-      console.log("Session ===>", sessionData)
+      try {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+        console.log("Session ===>", sessionData, sessionError)
 
-      const { data: userData } = await supabase.auth.getUser()
-      console.log("User ===>", userData)
+        const { data: userData, error: userError } = await supabase.auth.getUser()
+        console.log("User ===>", userData, userError)
 
-      if (userData?.user?.id) {
-        const { data: profiles, error } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", userData.user.id)
-          .single()
-        console.log("Profile ===>", profiles, error)
+        if (userData?.user?.id) {
+          console.log("User ID found:", userData.user.id)
+          console.log("User email:", userData.user.email)
+          
+          const { data: profiles, error: profileError } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", userData.user.id)
+            .single()
+          console.log("Profile ===>", profiles, profileError)
+          
+          if (profileError) {
+            console.error("Profile query error details:", profileError.message, profileError.code, profileError.hint)
+          }
+        } else {
+          console.log("No user ID found")
+        }
+      } catch (err) {
+        console.error("Debug auth error:", err)
       }
       
       console.log('=== 🔧 DEBUG AUTH END ===')
     }
-    debugAuth()
+    
+    // 延迟执行，等待认证状态稳定
+    const timer = setTimeout(debugAuth, 2000)
+    return () => clearTimeout(timer)
   }, [supabase])
 
   // 处理认证成功后的参数
