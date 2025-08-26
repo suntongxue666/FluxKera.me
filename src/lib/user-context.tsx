@@ -79,14 +79,24 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
 
       console.log("Using user for DB query:", email)
+      console.log("User ID for query:", user.id)
 
-      // 拉取数据库用户信息
-      const { data, error } = await supabase
+      // 拉取数据库用户信息 - 添加超时机制
+      console.log("About to execute DB query...")
+      
+      const dbQueryPromise = supabase
         .from("users")
         .select("id, email, credits, avatar_url, google_id, created_at, updated_at")
         .eq("id", user.id)  // 使用id查询而不是email，更准确
         .single()
+        
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database query timeout')), 10000)
+      )
 
+      const { data, error } = await Promise.race([dbQueryPromise, timeoutPromise])
+      
+      console.log('DB query completed')
       console.log('DB query result:', { data, error })
 
       if (error) {
