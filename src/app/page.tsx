@@ -173,39 +173,53 @@ export default function HomePage() {
       console.log('=== 🔧 DEBUG AUTH START ===')
       
       try {
+        console.log('Step 1: About to call getSession...')
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+        console.log('Step 2: getSession completed')
         console.log("Session ===>", sessionData, sessionError)
 
+        console.log('Step 3: About to call getUser...')
         const { data: userData, error: userError } = await supabase.auth.getUser()
+        console.log('Step 4: getUser completed')
         console.log("User ===>", userData, userError)
 
         if (userData?.user?.id) {
-          console.log("User ID found:", userData.user.id)
+          console.log("Step 5: User ID found:", userData.user.id)
           console.log("User email:", userData.user.email)
           
+          console.log('Step 6: About to query database...')
           const { data: profiles, error: profileError } = await supabase
             .from("users")
             .select("*")
             .eq("id", userData.user.id)
             .single()
+          console.log('Step 7: Database query completed')
           console.log("Profile ===>", profiles, profileError)
           
           if (profileError) {
             console.error("Profile query error details:", profileError.message, profileError.code, profileError.hint)
           }
         } else {
-          console.log("No user ID found")
+          console.log("Step 5: No user ID found")
         }
       } catch (err) {
         console.error("Debug auth error:", err)
+        console.error("Error stack:", err.stack)
       }
       
       console.log('=== 🔧 DEBUG AUTH END ===')
     }
     
+    console.log('Setting up debug timer...')
     // 延迟执行，等待认证状态稳定
-    const timer = setTimeout(debugAuth, 2000)
-    return () => clearTimeout(timer)
+    const timer = setTimeout(() => {
+      console.log('Debug timer triggered, calling debugAuth...')
+      debugAuth()
+    }, 2000)
+    return () => {
+      console.log('Cleaning up debug timer')
+      clearTimeout(timer)
+    }
   }, [supabase])
 
   // 处理认证成功后的参数
