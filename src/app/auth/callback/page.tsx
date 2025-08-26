@@ -14,28 +14,34 @@ function AuthCallbackContent() {
       console.log('=== CLIENT AUTH CALLBACK START ===')
       
       try {
-        // 首先尝试刷新session（兼容性更好的方法）
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+        console.log('Handling OAuth callback with code:', searchParams.get('code') ? 'present' : 'missing')
         
-        if (refreshError) {
-          console.error('Error refreshing session:', refreshError)
+        // 对于旧版本Supabase，使用exchangeCodeForSession方法
+        const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(
+          searchParams.get('code') || ''
+        )
+        
+        if (sessionError) {
+          console.error('Error exchanging code for session:', sessionError)
           
-          // 如果刷新失败，尝试使用signIn方法处理回调
-          const { data: callbackData, error: callbackError } = await supabase.auth.signIn({ 
-            refreshToken: true 
-          })
+          // 如果exchange失败，尝试使用refreshSession
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
           
-          if (callbackError) {
-            console.error('Error handling auth callback:', callbackError)
-            router.push('/?error=auth_failed&message=' + encodeURIComponent(callbackError.message))
+          if (refreshError) {
+            console.error('Error refreshing session:', refreshError)
+            router.push('/?error=auth_failed&message=' + encodeURIComponent(refreshError.message))
             return
           }
           
-          if (callbackData?.session) {
-            console.log('Session from signIn callback:', callbackData.session.user?.email)
+          if (refreshData?.session) {
+            console.log('Session refreshed successfully:', refreshData.session.user?.email)
             router.push('/?auth=success')
             return
           }
+        } else if (sessionData?.session) {
+          console.log('Session from code exchange:', sessionData.session.user?.email)
+          router.push('/?auth=success')
+          return
         }
 
         if (session) {
