@@ -6,7 +6,6 @@ import Image from 'next/image'
 import { Zap, Sparkles, Users, ArrowRight, Check, Download, Star } from 'lucide-react'
 import AIGenerator from '@/components/AIGenerator'
 import { useUser } from '@/lib/user-context'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 // Inline styles to ensure basic styling works
 const styles = {
@@ -165,79 +164,6 @@ const styles = {
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState('all')
   const { refreshUser } = useUser()
-  const supabase = createClientComponentClient()
-
-  // 🔧 最小化测试（排除法）- 调试认证问题
-  useEffect(() => {
-    async function debugAuth() {
-      console.log('=== 🔧 DEBUG AUTH START ===')
-      console.log('Supabase client:', supabase)
-      console.log('Environment check:', {
-        url: process.env.NEXT_PUBLIC_SUPABASE_URL,
-        anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.slice(0, 10) + '...'
-      })
-      
-      try {
-        console.log('Step 1: About to call getSession...')
-        
-        // 添加超时机制
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('getSession timeout')), 5000)
-        )
-        
-        const sessionPromise = supabase.auth.getSession()
-        const { data: sessionData, error: sessionError } = await Promise.race([sessionPromise, timeoutPromise])
-        
-        console.log('Step 2: getSession completed')
-        console.log("Session ===>", sessionData, sessionError)
-
-        console.log('Step 3: About to call getUser...')
-        const userPromise = supabase.auth.getUser()
-        const { data: userData, error: userError } = await Promise.race([userPromise, timeoutPromise])
-        
-        console.log('Step 4: getUser completed')
-        console.log("User ===>", userData, userError)
-
-        if (userData?.user?.id) {
-          console.log("Step 5: User ID found:", userData.user.id)
-          console.log("User email:", userData.user.email)
-          
-          console.log('Step 6: About to query database...')
-          const dbPromise = supabase
-            .from("users")
-            .select("*")
-            .eq("id", userData.user.id)
-            .single()
-          const { data: profiles, error: profileError } = await Promise.race([dbPromise, timeoutPromise])
-          
-          console.log('Step 7: Database query completed')
-          console.log("Profile ===>", profiles, profileError)
-          
-          if (profileError) {
-            console.error("Profile query error details:", profileError.message, profileError.code, profileError.hint)
-          }
-        } else {
-          console.log("Step 5: No user ID found")
-        }
-      } catch (err) {
-        console.error("Debug auth error:", err)
-        console.error("Error stack:", err.stack)
-      }
-      
-      console.log('=== 🔧 DEBUG AUTH END ===')
-    }
-    
-    console.log('Setting up debug timer...')
-    // 延迟执行，等待认证状态稳定
-    const timer = setTimeout(() => {
-      console.log('Debug timer triggered, calling debugAuth...')
-      debugAuth()
-    }, 2000)
-    return () => {
-      console.log('Cleaning up debug timer')
-      clearTimeout(timer)
-    }
-  }, [supabase])
 
   // 处理认证成功后的参数
   useEffect(() => {
