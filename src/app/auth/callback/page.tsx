@@ -31,8 +31,19 @@ function AuthCallbackContent() {
       console.log('Authorization code received, processing...')
       
       try {
-        // 对于新版本的Supabase，直接使用exchangeCodeForSession
-        const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(code)
+        // 对于新版本的Supabase，需要传入完整的URL
+        console.log('Attempting to exchange code for session...')
+        console.log('Current URL:', window.location.href)
+        
+        // 添加超时机制
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Exchange timeout')), 10000)
+        )
+        
+        const exchangePromise = supabase.auth.exchangeCodeForSession(window.location.href)
+        
+        const { data, error: sessionError } = await Promise.race([exchangePromise, timeoutPromise])
+        console.log('Exchange result:', { data: data?.session?.user?.email, error: sessionError })
         
         if (sessionError) {
           console.error('Error exchanging code for session:', sessionError)
@@ -42,6 +53,7 @@ function AuthCallbackContent() {
 
         if (data.session) {
           console.log('Session created successfully for user:', data.session.user.email)
+          console.log('About to redirect to /?auth=success')
           // 清除URL参数并重定向到首页
           router.replace('/?auth=success')
         } else {
@@ -50,7 +62,13 @@ function AuthCallbackContent() {
         }
       } catch (err) {
         console.error('Unexpected error during auth callback:', err)
-        router.push('/?error=unexpected_error')
+        console.error('Error details:', err)
+        
+        if (err.message === 'Exchange timeout') {
+          router.push('/?error=timeout&message=Authentication timeout')
+        } else {
+          router.push('/?error=unexpected_error')
+        }
       }
     }
 
