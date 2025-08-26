@@ -68,6 +68,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
 
       console.log('Session found, user ID:', session.user.id)
+      console.log('Session user email:', session.user.email)
+      console.log('Session user metadata:', session.user.user_metadata)
 
       // 尝试直接查询数据库（应该通过 RLS 策略）
       try {

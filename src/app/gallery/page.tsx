@@ -6,43 +6,43 @@ import { Heart, Download, Eye } from 'lucide-react'
 const sampleImages = [
   {
     id: 1,
-    url: '/gallery/image1.webp',
-    prompt: 'A beautiful fantasy landscape with floating islands and magical waterfalls in a vibrant sunset sky',
+    url: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/FluxKrea%20ImagesShow/FluxkeraPic-07.webp',
+    prompt: 'Two weird wizards, one old, one younger in different patchwork wizard garb playing chess. They are sitting opposite to each other. The black and white chess pieces are floating in the air. The wizards are just watching. Background a bookcase with leatherbound magical books. Realistic, detailed, colorful',
     likes: 156,
     downloads: 89
   },
   {
     id: 2,
-    url: '/gallery/image2.webp',
-    prompt: 'Cyberpunk city street at night with neon lights, flying cars, and futuristic architecture',
+    url: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/FluxKrea%20ImagesShow/FluxkeraPic-08.webp',
+    prompt: 'Blue hour, Scandinavia. Fashion portrait of a dark skinned model. Lit with a red key light and a visible backlight',
     likes: 203,
     downloads: 124
   },
   {
     id: 3,
-    url: '/gallery/image3.webp',
-    prompt: 'Majestic dragon perched on a mountain peak with glowing eyes and detailed scales',
+    url: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/FluxKrea%20ImagesShow/FluxkeraPic-09.webp',
+    prompt: 'A fully 4k completely transparent clean glass detailed Star Wars Darth Vader helmet as lush terrarium.',
     likes: 178,
     downloads: 97
   },
   {
     id: 4,
-    url: '/gallery/image4.webp',
-    prompt: 'Underwater fantasy scene with glowing coral reefs and mystical sea creatures',
+    url: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/FluxKrea%20ImagesShow/FluxkeraPic-10.webp',
+    prompt: 'A deeply emotional, dark fantasy portrait of a tall warrior in dark, weathered plate armor and a delicate angel with large, white feathered wings. They stand in a somber and intimate embrace, with the angel resting her head against the warrior\'s chest, and the warrior bowing his head over hers. The style is hyperrealistic and melancholic, sorrow, or farewell.',
     likes: 142,
     downloads: 76
   },
   {
     id: 5,
-    url: '/gallery/image5.webp',
-    prompt: 'Steampunk airship flying through clouds with intricate brass machinery and gears',
+    url: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/FluxKrea%20ImagesShow/FluxkeraPic-11.webp',
+    prompt: 'A cinematic, high-resolution photo of a luxurious green crocodile leather handbag placed gently on soft, lush grass at the edge of a calm river. The bag is rich emerald green with a gold clasp, shining subtly in natural sunlight. Around it, delicate light pink wildflowers bloom and reflect in the shallow water nearby. Style: ultra-realistic fashion editorial photography.',
     likes: 189,
     downloads: 112
   },
   {
     id: 6,
-    url: '/gallery/image6.webp',
-    prompt: 'Ancient temple ruins in a jungle with overgrown vegetation and mysterious glowing runes',
+    url: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/FluxKrea%20ImagesShow/FluxkeraPic-12.webp',
+    prompt: '35mm photo of a whimsical squirrel playing a violin, wearing a tiny worn vintage hat, standing on a large wide stump in a lush forest',
     likes: 165,
     downloads: 88
   }
@@ -89,8 +89,8 @@ export default function GalleryPage() {
           ))}
         </div>
 
-        {/* Image Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {/* Image Grid - 1 row with 3 columns */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {sampleImages.map((image) => (
             <div
               key={image.id}
