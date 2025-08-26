@@ -20,6 +20,9 @@ async function getPayPalAccessToken() {
     `${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`
   ).toString('base64')
 
+  console.log('Requesting PayPal access token from:', `${PAYPAL_API_BASE}/v1/oauth2/token`)
+  console.log('PayPal environment:', process.env.PAYPAL_ENVIRONMENT)
+  
   const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
     method: 'POST',
     headers: {
@@ -29,7 +32,15 @@ async function getPayPalAccessToken() {
     body: 'grant_type=client_credentials',
   })
 
+  console.log('PayPal token response status:', response.status)
+  
   const data = await response.json()
+  console.log('PayPal token response data:', data)
+  
+  if (!response.ok) {
+    throw new Error(`PayPal token request failed: ${response.status} ${JSON.stringify(data)}`)
+  }
+  
   return data.access_token
 }
 
