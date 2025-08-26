@@ -10,6 +10,7 @@ interface UserContextType {
   credits: number
   loading: boolean
   refreshUser: () => Promise<void>
+  refreshCredits: () => Promise<void>
   signIn: () => Promise<void>
   signOut: () => Promise<void>
 }
@@ -43,7 +44,27 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     userRef.current = user
   }, [user])
 
-  // 刷新用户信息
+  // 专门刷新积分余额
+  const refreshCredits = async () => {
+    if (!user) return
+    
+    try {
+      const { data: creditData, error: creditError } = await supabase
+        .from('users')
+        .select('credits')
+        .eq('id', user.id)
+        .single()
+
+      if (creditData && !creditError) {
+        console.log('Refreshed credits:', creditData.credits)
+        setCredits(creditData.credits)
+      }
+    } catch (error) {
+      console.error('Error refreshing credits:', error)
+    }
+  }
+
+  // 刷新用户信息 - 只处理认证状态，积分实时从数据库获取
   const refreshUser = async () => {
     try {
       console.log('Starting user refresh...')
@@ -71,68 +92,42 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       console.log('Session user email:', session.user.email)
       console.log('Session user metadata:', session.user.user_metadata)
 
-      // 尝试直接查询数据库（应该通过 RLS 策略）
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-
-        if (data && !error) {
-          console.log('User data from database:', data)
-          setUser(data as User)
-          setCredits(data.credits)
-          setLoading(false)
-          return
-        } else {
-          console.log('Database query failed:', error)
-        }
-      } catch (dbError) {
-        console.log('Database query error:', dbError)
-        // 继续尝试其他方法
-      }
-
-      // 如果数据库查询失败，使用 API 同步
-      console.log('Session user metadata:', session.user.user_metadata)
-      const avatarUrl = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture
-      console.log('Extracted avatar URL:', avatarUrl)
-
-      const response = await fetch('/api/sync-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: session.user.id,
-          email: session.user.email,
-          google_id: session.user.user_metadata?.sub,
-          avatar_url: avatarUrl,
-        }),
-      })
-
-      if (response.ok) {
-        const { user: syncedUser } = await response.json()
-        console.log('Synced user data:', syncedUser)
-        if (syncedUser) {
-          setUser(syncedUser as User)
-          setCredits(syncedUser.credits)
-          setLoading(false)
-          return
-        }
-      } else {
-        console.error('User sync failed:', await response.text())
-      }
-
-      // fallback
-      setUser({
+      // 只存储用户基本信息，积分实时查询
+      const userBasicInfo = {
         id: session.user.id,
         email: session.user.email || '',
         google_id: session.user.user_metadata?.sub || '',
         avatar_url: session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null,
-        credits: 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      })
-      setCredits(0)
+      }
+
+      // 实时查询积分余额
+      try {
+        const { data: creditData, error: creditError } = await supabase
+          .from('users')
+          .select('credits')
+          .eq('id', session.user.id)
+          .single()
+
+        if (creditData && !creditError) {
+          console.log('Current credits from database:', creditData.credits)
+          setUser(userBasicInfo as User)
+          setCredits(creditData.credits)
+        } else {
+          console.log('Credit query failed, using basic user info:', creditError)
+          setUser(userBasicInfo as User)
+          setCredits(0)
+        }
+      } catch (creditError) {
+        console.log('Credit query error, using basic user info:', creditError)
+        setUser(userBasicInfo as User)
+        setCredits(0)
+      }
+
+      setLoading(false)
+      return
+
       setLoading(false)
 
     } catch (err) {
@@ -304,7 +299,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, []) // 保持空依赖数组，但使用mounted标志防止内存泄漏
 
   return (
-    <UserContext.Provider value={{ user, credits, loading, refreshUser, signIn, signOut }}>
+    <UserContext.Provider value={{ user, credits, loading, refreshUser, refreshCredits, signIn, signOut }}>
       {children}
     </UserContext.Provider>
   )
