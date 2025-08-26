@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Zap, Sparkles, Users, ArrowRight, Check, Download, Star } from 'lucide-react'
 import AIGenerator from '@/components/AIGenerator'
 import { useUser } from '@/lib/user-context'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 // Inline styles to ensure basic styling works
 const styles = {
@@ -164,6 +165,32 @@ const styles = {
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState('all')
   const { refreshUser } = useUser()
+  const supabase = createClientComponentClient()
+
+  // 🔧 最小化测试（排除法）- 调试认证问题
+  useEffect(() => {
+    async function debugAuth() {
+      console.log('=== 🔧 DEBUG AUTH START ===')
+      
+      const { data: sessionData } = await supabase.auth.getSession()
+      console.log("Session ===>", sessionData)
+
+      const { data: userData } = await supabase.auth.getUser()
+      console.log("User ===>", userData)
+
+      if (userData?.user?.id) {
+        const { data: profiles, error } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", userData.user.id)
+          .single()
+        console.log("Profile ===>", profiles, error)
+      }
+      
+      console.log('=== 🔧 DEBUG AUTH END ===')
+    }
+    debugAuth()
+  }, [supabase])
 
   // 处理认证成功后的参数
   useEffect(() => {
