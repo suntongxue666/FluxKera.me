@@ -171,15 +171,30 @@ export default function HomePage() {
   useEffect(() => {
     async function debugAuth() {
       console.log('=== 🔧 DEBUG AUTH START ===')
+      console.log('Supabase client:', supabase)
+      console.log('Environment check:', {
+        url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+        anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.slice(0, 10) + '...'
+      })
       
       try {
         console.log('Step 1: About to call getSession...')
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+        
+        // 添加超时机制
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('getSession timeout')), 5000)
+        )
+        
+        const sessionPromise = supabase.auth.getSession()
+        const { data: sessionData, error: sessionError } = await Promise.race([sessionPromise, timeoutPromise])
+        
         console.log('Step 2: getSession completed')
         console.log("Session ===>", sessionData, sessionError)
 
         console.log('Step 3: About to call getUser...')
-        const { data: userData, error: userError } = await supabase.auth.getUser()
+        const userPromise = supabase.auth.getUser()
+        const { data: userData, error: userError } = await Promise.race([userPromise, timeoutPromise])
+        
         console.log('Step 4: getUser completed')
         console.log("User ===>", userData, userError)
 
@@ -188,11 +203,13 @@ export default function HomePage() {
           console.log("User email:", userData.user.email)
           
           console.log('Step 6: About to query database...')
-          const { data: profiles, error: profileError } = await supabase
+          const dbPromise = supabase
             .from("users")
             .select("*")
             .eq("id", userData.user.id)
             .single()
+          const { data: profiles, error: profileError } = await Promise.race([dbPromise, timeoutPromise])
+          
           console.log('Step 7: Database query completed')
           console.log("Profile ===>", profiles, profileError)
           
