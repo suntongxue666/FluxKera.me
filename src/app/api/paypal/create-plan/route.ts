@@ -3,7 +3,9 @@ import { NextRequest, NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 // PayPal API 基础URL
-const PAYPAL_API_BASE = 'https://api-m.sandbox.paypal.com'
+const PAYPAL_API_BASE = process.env.PAYPAL_ENVIRONMENT === 'live' 
+  ? 'https://api-m.paypal.com' 
+  : 'https://api-m.sandbox.paypal.com'
 
 // 获取PayPal访问令牌
 async function getPayPalAccessToken() {

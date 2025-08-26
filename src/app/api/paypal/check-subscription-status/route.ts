@@ -4,7 +4,9 @@ import { createClient } from '@supabase/supabase-js'
 export const dynamic = 'force-dynamic'
 
 // PayPal API 基础URL
-const PAYPAL_API_BASE = 'https://api-m.sandbox.paypal.com'
+const PAYPAL_API_BASE = process.env.PAYPAL_ENVIRONMENT === 'live' 
+  ? 'https://api-m.paypal.com' 
+  : 'https://api-m.sandbox.paypal.com'
 
 // 初始化Supabase客户端
 const supabase = createClient(

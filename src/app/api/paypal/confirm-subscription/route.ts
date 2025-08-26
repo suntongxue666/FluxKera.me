@@ -10,9 +10,9 @@ const supabase = createClient(
 )
 
 // PayPal API 基础URL
-const PAYPAL_API_BASE = process.env.PAYPAL_ENVIRONMENT === 'sandbox' 
-  ? 'https://api-m.sandbox.paypal.com'
-  : 'https://api-m.paypal.com'
+const PAYPAL_API_BASE = process.env.PAYPAL_ENVIRONMENT === 'live' 
+  ? 'https://api-m.paypal.com'
+  : 'https://api-m.sandbox.paypal.com'
 
 // 获取PayPal访问令牌
 async function getPayPalAccessToken() {
