@@ -104,21 +104,34 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async () => {
     try {
+      console.log('Starting Google OAuth login...')
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: { access_type: 'offline', prompt: 'consent' }
+          queryParams: { 
+            access_type: 'offline', 
+            prompt: 'consent',
+            response_type: 'code'
+          },
+          skipBrowserRedirect: false
         }
       })
+      
       if (error) {
-        console.error('Google 登录错误:', error)
-        alert('登录失败: ' + error.message)
+        console.error('Google OAuth error:', error)
+        alert('Login failed: ' + error.message)
       } else if (data?.url) {
+        console.log('Redirecting to Google OAuth:', data.url)
         window.location.href = data.url
+      } else {
+        console.error('No redirect URL received from OAuth')
+        alert('Login configuration error. Please try again.')
       }
     } catch (error) {
       console.error('Sign in error:', error)
+      alert('Login error: ' + (error as Error).message)
     }
   }
 
@@ -139,19 +152,49 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('=== AUTH STATE CHANGED ===', event)
+        console.log('=== AUTH STATE CHANGED ===', event, session?.user?.email)
+        
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          console.log('Session available, refreshing user data...')
           await refreshUser()
         } else if (event === 'SIGNED_OUT') {
+          console.log('User signed out, clearing data...')
           setUser(null)
           setCredits(0)
-          localStorage.removeItem('user')
+          localStorage.removeItem('app_user')
+        } else if (event === 'INITIAL_SESSION') {
+          console.log('Initial session event, checking session...')
+          // 等待一下让session稳定
+          setTimeout(async () => {
+            const { data: { session: currentSession } } = await supabase.auth.getSession()
+            if (currentSession?.user) {
+              console.log('Initial session found, refreshing user...')
+              await refreshUser()
+            } else {
+              console.log('No initial session, keeping loading state')
+              setLoading(false)
+            }
+          }, 1000)
         }
       }
     )
 
-    // 页面首次加载时强制刷新一次
-    refreshUser()
+    // 页面首次加载时检查session状态
+    const checkInitialSession = async () => {
+      console.log('Checking initial session...')
+      const { data: { session } } = await supabase.auth.getSession()
+      console.log('Initial session from getSession:', session?.user?.email)
+      
+      if (session?.user) {
+        console.log('Session found on initial load, refreshing user...')
+        await refreshUser()
+      } else {
+        console.log('No session on initial load, setting loading to false')
+        setLoading(false)
+      }
+    }
+
+    checkInitialSession()
 
     return () => subscription.unsubscribe()
   }, [])
