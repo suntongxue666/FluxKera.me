@@ -28,28 +28,8 @@ function AuthCallbackContent() {
 
       console.log('Authorization code received:', code)
       
-      try {
-        // 使用fetch API直接调用服务器端路由来处理OAuth回调
-        const response = await fetch('/api/handle-auth-callback', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ code }),
-        })
-
-        if (response.ok) {
-          console.log('Auth callback handled successfully')
-          router.push('/?auth=success')
-        } else {
-          const errorData = await response.json()
-          console.error('Auth callback failed:', errorData)
-          router.push('/?error=auth_failed&message=' + encodeURIComponent(errorData.message || 'Authentication failed'))
-        }
-      } catch (error) {
-        console.error('Unexpected error:', error)
-        router.push('/?error=unexpected_error&message=' + encodeURIComponent((error as Error).message))
-      }
+      // 直接重定向到服务器端API路由，让服务器处理OAuth回调
+      window.location.href = `/api/handle-auth-callback?code=${encodeURIComponent(code)}`
     }
 
     handleCallback()

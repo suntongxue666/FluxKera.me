@@ -2,15 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const { code } = await request.json()
+    const requestUrl = new URL(request.url)
+    const code = requestUrl.searchParams.get('code')
     
     if (!code) {
-      return NextResponse.json(
-        { error: 'No authorization code provided' },
-        { status: 400 }
-      )
+      console.error('No authorization code found in URL')
+      return NextResponse.redirect(new URL('/?error=no_code', request.url))
     }
 
     const cookieStore = cookies()
@@ -33,33 +32,24 @@ export async function POST(request: NextRequest) {
     )
 
     console.log('Exchanging code for session...')
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(requestUrl.toString())
 
     if (error) {
       console.error('Error exchanging code for session:', error)
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      )
+      return NextResponse.redirect(new URL('/?error=auth_failed', request.url))
     }
 
     if (!data.session) {
       console.error('No session received after code exchange')
-      return NextResponse.json(
-        { error: 'No session received' },
-        { status: 400 }
-      )
+      return NextResponse.redirect(new URL('/?error=no_session', request.url))
     }
 
     console.log('Session exchanged successfully for user:', data.session.user.email)
     
-    return NextResponse.json({ success: true })
+    return NextResponse.redirect(new URL('/?auth=success', request.url))
 
   } catch (error) {
     console.error('Unexpected error in auth callback:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.redirect(new URL('/?error=unexpected_error', request.url))
   }
 }
