@@ -40,9 +40,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // 刷新用户信息（数据库）- 传入session参数避免重复调用getSession
   const refreshUser = async (sessionUser = null) => {
+    console.log("=== REFRESH USER START ===", sessionUser ? 'with session' : 'without session')
+
     try {
       setLoading(true)
-      console.log('=== REFRESH USER START ===', sessionUser ? 'with session' : 'without session')
 
       let user = sessionUser
       
@@ -53,13 +54,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         console.log('Session from getSession:', session?.user?.email)
         
         if (sessionError) {
-          console.error('Error getting session:', sessionError)
+          console.error('❌ Error getting session:', sessionError)
+          setUser(null)
           setLoading(false)
           return
         }
 
         if (!session?.user) {
-          console.log('No session user found')
+          console.log('❌ No session user found')
+          setUser(null)
           setLoading(false)
           return
         }
@@ -67,68 +70,87 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         user = session.user
       }
 
-      console.log('Using user for DB query:', user.email)
+      const email = user?.email
+      if (!email) {
+        console.error("❌ No email found in sessionUser")
+        setUser(null)
+        setLoading(false)
+        return
+      }
+
+      console.log("Using user for DB query:", email)
 
       // 拉取数据库用户信息
       const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
+        .from("users")
+        .select("id, email, credits, avatar_url, google_id, created_at, updated_at")
+        .eq("id", user.id)  // 使用id查询而不是email，更准确
         .single()
 
       console.log('DB query result:', { data, error })
 
-      if (data && !error) {
-        console.log('Fetched user from DB:', data)
-        setUser(data as User)
-        setCredits(data.credits)
-        localStorage.setItem('app_user', JSON.stringify(data))
+      if (error) {
+        console.error("❌ Error fetching user from DB:", error.message, error.code)
+        
+        if (error.code === 'PGRST116') { // 用户不存在
+          console.warn("⚠️ No user row found, creating new user...")
+          
+          // 创建新用户
+          const { data: newUser, error: insertError } = await supabase
+            .from("users")
+            .insert({
+              id: user.id,
+              email: user.email,
+              google_id: user.user_metadata?.sub || user.id,
+              credits: 20, // 新用户获得20积分
+              avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select("id, email, credits, avatar_url, google_id, created_at, updated_at")
+            .single()
+
+          if (insertError) {
+            console.error("❌ Insert error:", insertError.message)
+            setUser(null)
+            setLoading(false)
+            return
+          }
+
+          console.log("✅ New user created:", newUser)
+          setUser(newUser as User)
+          setCredits(newUser.credits)
+          localStorage.setItem('app_user', JSON.stringify(newUser))
+          setLoading(false)
+          console.log('=== REFRESH USER SUCCESS (NEW USER) ===')
+          return
+        }
+
+        // 其他数据库错误
+        setUser(null)
         setLoading(false)
-        console.log('=== REFRESH USER SUCCESS ===')
         return
       }
 
-      if (error) {
-        console.error('DB query error:', error.message, error.code)
+      if (!data) {
+        console.warn("⚠️ No data returned from query")
+        setUser(null)
+        setLoading(false)
+        return
       }
 
-      console.warn('User not found in DB, syncing...')
-      const response = await fetch('/api/sync-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: user.id,
-          email: user.email,
-          google_id: user.user_metadata?.sub,
-          avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture,
-        }),
-      })
-
-      console.log('Sync user API response status:', response.status) // 🔍 增强调试
-
-      if (response.ok) {
-        const { user: syncedUser } = await response.json()
-        console.log('Sync user API response:', syncedUser) // 🔍 增强调试
-        if (syncedUser) {
-          console.log('User synced into DB:', syncedUser)
-          setUser(syncedUser as User)
-          setCredits(syncedUser.credits)
-          localStorage.setItem('app_user', JSON.stringify(syncedUser)) // ✅ 使用 app_user 更新缓存
-          setLoading(false)
-          console.log('=== REFRESH USER SUCCESS (SYNCED) ===')
-          return
-        }
-      } else {
-        const errorText = await response.text()
-        console.error('Sync user API failed:', response.status, errorText)
-      }
-    } catch (err) {
-      console.error('Error refreshing user:', err)
-      // 🚩 不要清空user，保持当前状态，但要设置loading=false
+      // ✅ 成功获取用户数据，更新到 state
+      console.log("✅ User data loaded:", data)
+      setUser(data as User)
+      setCredits(data.credits || 0)
+      localStorage.setItem('app_user', JSON.stringify(data))
       setLoading(false)
-    } finally {
-      // 确保loading状态被正确设置
-      console.log('=== REFRESH USER END ===')
+      console.log('=== REFRESH USER SUCCESS ===')
+
+    } catch (err) {
+      console.error("❌ Unexpected error in refreshUser:", err)
+      setUser(null)
+      setLoading(false)
     }
   }
 
