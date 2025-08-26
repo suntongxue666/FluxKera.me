@@ -14,23 +14,25 @@ function AuthCallbackContent() {
       console.log('=== CLIENT AUTH CALLBACK START ===')
       
       try {
-        // 首先尝试从URL获取session（适用于OAuth回调）
-        const { data: { session }, error: urlError } = await supabase.auth.getSessionFromUrl({ storeSession: true })
+        // 首先尝试刷新session（兼容性更好的方法）
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
         
-        if (urlError) {
-          console.error('Error getting session from URL:', urlError)
+        if (refreshError) {
+          console.error('Error refreshing session:', refreshError)
           
-          // 如果URL方式失败，尝试刷新session
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+          // 如果刷新失败，尝试使用signIn方法处理回调
+          const { data: callbackData, error: callbackError } = await supabase.auth.signIn({ 
+            refreshToken: true 
+          })
           
-          if (refreshError) {
-            console.error('Error refreshing session:', refreshError)
-            router.push('/?error=auth_failed&message=' + encodeURIComponent(refreshError.message))
+          if (callbackError) {
+            console.error('Error handling auth callback:', callbackError)
+            router.push('/?error=auth_failed&message=' + encodeURIComponent(callbackError.message))
             return
           }
           
-          if (refreshData?.session) {
-            console.log('Session refreshed successfully:', refreshData.session.user?.email)
+          if (callbackData?.session) {
+            console.log('Session from signIn callback:', callbackData.session.user?.email)
             router.push('/?auth=success')
             return
           }
