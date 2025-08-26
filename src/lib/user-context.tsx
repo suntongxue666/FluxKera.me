@@ -46,17 +46,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // 刷新用户信息
   const refreshUser = async () => {
     try {
-      // 添加超时保护
-      const sessionPromise = supabase.auth.getSession()
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('getSession timeout')), 8000)
-      )
-
-      const { data: { session }, error: sessionError } = await Promise.race([
-        sessionPromise,
-        timeoutPromise
-      ]) as any
-
+      console.log('Starting user refresh...')
+      
+      // 首先检查是否有活动的session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
       if (sessionError) {
         console.error('Error getting session:', sessionError)
         setUser(null)
@@ -66,27 +60,35 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (!session?.user) {
+        console.log('No active session found')
         setUser(null)
         setCredits(0)
         setLoading(false)
         return
       }
 
-      // 尝试直接查询数据库（应该通过 RLS 策略）
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', session.user.id)
-        .single()
+      console.log('Session found, user ID:', session.user.id)
 
-      if (data && !error) {
-        console.log('User data from database:', data)
-        setUser(data as User)
-        setCredits(data.credits)
-        setLoading(false)
-        return
-      } else {
-        console.log('Database query failed:', error)
+      // 尝试直接查询数据库（应该通过 RLS 策略）
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+
+        if (data && !error) {
+          console.log('User data from database:', data)
+          setUser(data as User)
+          setCredits(data.credits)
+          setLoading(false)
+          return
+        } else {
+          console.log('Database query failed:', error)
+        }
+      } catch (dbError) {
+        console.log('Database query error:', dbError)
+        // 继续尝试其他方法
       }
 
       // 如果数据库查询失败，使用 API 同步
@@ -222,7 +224,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (!mounted) return
         
         try {
-          const { data: { session } } = await supabase.auth.getSession()
+          const { data: { session }, error } = await supabase.auth.getSession()
+          
+          if (error) {
+            console.error('Periodic session check error:', error)
+            return
+          }
+          
           console.log('Periodic check - Session exists:', !!session?.user, 'Current user state:', !!userRef.current)
           
           // 如果有session但当前状态显示没有user，恢复用户状态
@@ -250,7 +258,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         } catch (error) {
           console.error('Periodic session check error:', error)
         }
-      }, 60000) // 每60秒检查一次
+      }, 30000) // 每30秒检查一次，提高频率
     }
 
     // 监听认证状态变化

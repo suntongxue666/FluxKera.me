@@ -28,7 +28,7 @@ export default function CustomSubscriptionButton({
   const handleSubscribe = async () => {
     if (!user) {
       // 跳转到登录页面
-      window.location.href = '/auth/callback'
+      window.location.href = '/auth/callback?redirect=' + encodeURIComponent(window.location.pathname)
       return
     }
 

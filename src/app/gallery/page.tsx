@@ -6,87 +6,45 @@ import { Heart, Download, Eye } from 'lucide-react'
 const sampleImages = [
   {
     id: 1,
-    url: 'https://images.unsplash.com/photo-1543857778-c4a1a569e7bd?w=800&h=800&fit=crop',
-    prompt: 'Two weird wizards, one old, one younger in different patchwork wizard garb playing chess. They are sitting opposite to each other. The black and white chess pieces  are floating in the air. The wizards are just watching. Background a bookcase with leatherbound magical books. Realistic, detailed, colorful',
-    likes: 24,
-    downloads: 12
+    url: '/gallery/image1.webp',
+    prompt: 'A beautiful fantasy landscape with floating islands and magical waterfalls in a vibrant sunset sky',
+    likes: 156,
+    downloads: 89
   },
   {
     id: 2,
-    url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=800&fit=crop',
-    prompt: 'Blue hour, Scandinavia. Fashion portrait of a dark skinned model. Lit with a red key light and a visible backlight',
-    likes: 18,
-    downloads: 8
+    url: '/gallery/image2.webp',
+    prompt: 'Cyberpunk city street at night with neon lights, flying cars, and futuristic architecture',
+    likes: 203,
+    downloads: 124
   },
   {
     id: 3,
-    url: 'https://images.unsplash.com/photo-1633287387306-f08b4b3671c6?w=800&h=800&fit=crop',
-    prompt: 'A fully 4k completely transparent clean glass detailed Star Wars Darth Vader helmet as lush terrarium.',
-    likes: 31,
-    downloads: 15
+    url: '/gallery/image3.webp',
+    prompt: 'Majestic dragon perched on a mountain peak with glowing eyes and detailed scales',
+    likes: 178,
+    downloads: 97
   },
   {
     id: 4,
-    url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&h=800&fit=crop',
-    prompt: 'A deeply emotional, dark fantasy portrait of a tall warrior in dark, weathered plate armor and a delicate angel with large, white feathered wings. They stand in a somber and intimate embrace, with the angel resting her head against the warrior\'s chest, and the warrior bowing his head over hers. The style is hyperrealistic and melancholic, sorrow, or farewell.',
-    likes: 42,
-    downloads: 22
+    url: '/gallery/image4.webp',
+    prompt: 'Underwater fantasy scene with glowing coral reefs and mystical sea creatures',
+    likes: 142,
+    downloads: 76
   },
   {
     id: 5,
-    url: 'https://images.unsplash.com/photo-1602080858428-57174f943117?w=800&h=800&fit=crop',
-    prompt: 'A cinematic, high-resolution photo of a luxurious green crocodile leather handbag placed gently on soft, lush grass at the edge of a calm river. The bag is rich emerald green with a gold clasp, shining subtly in natural sunlight. Around it, delicate light pink wildflowers bloom and reflect in the shallow water nearby. Style: ultra-realistic fashion editorial photography.',
-    likes: 28,
-    downloads: 14
+    url: '/gallery/image5.webp',
+    prompt: 'Steampunk airship flying through clouds with intricate brass machinery and gears',
+    likes: 189,
+    downloads: 112
   },
   {
     id: 6,
-    url: 'https://images.unsplash.com/photo-1607604276583-19d9937a76d4?w=800&h=800&fit=crop',
-    prompt: '35mm photo of a whimsical squirrel playing a violin, wearing a tiny worn vintage hat, standing on a large wide stump in a lush forest',
-    likes: 35,
-    downloads: 18
-  },
-  {
-    id: 7,
-    url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=800&fit=crop',
-    prompt: 'Portrait of a young man with curly hair and a thoughtful expression, wearing a vintage leather jacket',
-    likes: 29,
-    downloads: 16
-  },
-  {
-    id: 8,
-    url: 'https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=800&h=800&fit=crop',
-    prompt: 'A surreal landscape with floating islands and waterfalls cascading into the sky',
-    likes: 45,
-    downloads: 28
-  },
-  {
-    id: 9,
-    url: 'https://images.unsplash.com/photo-1579546929662-711aa81148cf?w=800&h=800&fit=crop',
-    prompt: 'Abstract gradient background with vibrant colors transitioning from purple to orange',
-    likes: 33,
-    downloads: 19
-  },
-  {
-    id: 10,
-    url: 'https://images.unsplash.com/photo-1546587348-d12660c30c50?w=800&h=800&fit=crop',
-    prompt: 'Cyberpunk cityscape at night with neon lights reflecting on wet streets',
-    likes: 51,
-    downloads: 32
-  },
-  {
-    id: 11,
-    url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&h=800&fit=crop',
-    prompt: 'Macro shot of water droplets on a spider web in the early morning light',
-    likes: 38,
-    downloads: 21
-  },
-  {
-    id: 12,
-    url: 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&h=800&fit=crop',
-    prompt: 'Minimalist home office setup with a laptop, plants, and natural lighting',
-    likes: 26,
-    downloads: 14
+    url: '/gallery/image6.webp',
+    prompt: 'Ancient temple ruins in a jungle with overgrown vegetation and mysterious glowing runes',
+    likes: 165,
+    downloads: 88
   }
 ]
 
