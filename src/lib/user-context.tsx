@@ -24,16 +24,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   // 🚩 从 localStorage 预加载缓存的用户信息（加快页面初始渲染）
   useEffect(() => {
-    const cached = localStorage.getItem('user')
+    const cached = localStorage.getItem('app_user') // ✅ 使用 app_user 避免冲突
     if (cached) {
       try {
         const parsed = JSON.parse(cached) as User
         setUser(parsed)
         setCredits(parsed.credits ?? 0)
         setLoading(false)
-        console.log('Loaded cached user:', parsed)
+        console.log('Loaded cached user from app_user:', parsed)
       } catch (e) {
-        console.warn('Failed to parse cached user')
+        console.warn('Failed to parse cached user from app_user')
       }
     }
   }, [])
@@ -45,16 +45,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       console.log('=== REFRESH USER START ===')
 
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      console.log('Session from getSession:', session) // ✅ 增强调试
+      
       if (sessionError) {
         console.error('Error getting session:', sessionError)
-        setUser(null)
-        setCredits(0)
-        return
+        return // 🚩 不要清空user，保持当前状态
       }
 
       if (!session?.user) {
-        console.log('No session found yet - waiting for SIGNED_IN event')
-        return
+        console.log('No session yet - wait for SIGNED_IN event')
+        return // 🚩 不要清空user，保持loading=true等待事件
       }
 
       // 拉取数据库用户信息
@@ -68,7 +68,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         console.log('Fetched user from DB:', data)
         setUser(data as User)
         setCredits(data.credits)
-        localStorage.setItem('user', JSON.stringify(data)) // ✅ 更新缓存
+        localStorage.setItem('app_user', JSON.stringify(data)) // ✅ 使用 app_user 更新缓存
         return
       }
 
@@ -90,13 +90,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           console.log('User synced into DB:', syncedUser)
           setUser(syncedUser as User)
           setCredits(syncedUser.credits)
-          localStorage.setItem('user', JSON.stringify(syncedUser)) // ✅ 更新缓存
+          localStorage.setItem('app_user', JSON.stringify(syncedUser)) // ✅ 使用 app_user 更新缓存
         }
       }
     } catch (err) {
       console.error('Error refreshing user:', err)
-      setUser(null)
-      setCredits(0)
+      // 🚩 不要清空user，保持当前状态
     } finally {
       setLoading(false)
       console.log('=== REFRESH USER END ===')
@@ -128,7 +127,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       await supabase.auth.signOut()
       setUser(null)
       setCredits(0)
-      localStorage.removeItem('user') // ✅ 清除缓存
+      localStorage.removeItem('app_user') // ✅ 清除 app_user 缓存
     } catch (error) {
       console.error('Sign out error:', error)
     }
