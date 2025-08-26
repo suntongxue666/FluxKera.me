@@ -2,10 +2,12 @@
 
 import { useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 function AuthCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -26,14 +28,33 @@ function AuthCallbackContent() {
         return
       }
 
-      console.log('Authorization code received:', code)
+      console.log('Authorization code received, processing...')
       
-      // 直接重定向到服务器端API路由，让服务器处理OAuth回调
-      window.location.href = `/api/handle-auth-callback?code=${encodeURIComponent(code)}`
+      try {
+        // 使用getSessionFromUrl自动解析URL并保存session
+        const { data, error: sessionError } = await supabase.auth.getSessionFromUrl({ storeSession: true })
+        
+        if (sessionError) {
+          console.error('Error getting session from URL:', sessionError)
+          router.push(`/?error=auth_failed&message=${encodeURIComponent(sessionError.message)}`)
+          return
+        }
+
+        if (data.session) {
+          console.log('Session stored successfully for user:', data.session.user.email)
+          router.push('/?auth=success')
+        } else {
+          console.error('No session found in URL')
+          router.push('/?error=no_session')
+        }
+      } catch (err) {
+        console.error('Unexpected error during auth callback:', err)
+        router.push('/?error=unexpected_error')
+      }
     }
 
     handleCallback()
-  }, [router, searchParams])
+  }, [router, searchParams, supabase.auth])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
