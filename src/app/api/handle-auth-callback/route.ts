@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const cookieStore = cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_极速模式ANON_KEY!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           get(name: string) {
@@ -53,31 +53,6 @@ export async function POST(request: NextRequest) {
 
     console.log('Session exchanged successfully for user:', data.session.user.email)
     
-    // 同步用户数据到数据库
-    try {
-      const syncResponse = await fetch(`${request.nextUrl.origin}/api/sync-user`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${data.session.access_token}`
-        },
-        body: JSON.stringify({
-          id: data.session.user.id,
-          email: data.session.user.email,
-          google_id: data.session.user.user_metadata?.sub,
-          avatar_url: data.session.user.user_metadata?.avatar_url || data.session.user.user_metadata?.picture,
-        }),
-      })
-
-      if (!syncResponse.ok) {
-        console.warn('User sync failed, but login succeeded')
-      } else {
-        console.log('User synced successfully')
-      }
-    } catch (syncError) {
-      console.warn('User sync error (non-critical):', syncError)
-    }
-
     return NextResponse.json({ success: true })
 
   } catch (error) {
