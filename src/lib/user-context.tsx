@@ -49,12 +49,14 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       
       if (sessionError) {
         console.error('Error getting session:', sessionError)
+        setLoading(false)
         return // 🚩 不要清空user，保持当前状态
       }
 
       if (!session?.user) {
         console.log('No session yet - wait for SIGNED_IN event')
-        return // 🚩 不要清空user，保持loading=true等待事件
+        setLoading(false)
+        return // 🚩 不要清空user，但要设置loading=false
       }
 
       // 拉取数据库用户信息
@@ -64,11 +66,15 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         .eq('id', session.user.id)
         .single()
 
+      console.log('DB query result:', { data, error }) // 🔍 增强调试
+
       if (data && !error) {
         console.log('Fetched user from DB:', data)
         setUser(data as User)
         setCredits(data.credits)
         localStorage.setItem('app_user', JSON.stringify(data)) // ✅ 使用 app_user 更新缓存
+        setLoading(false)
+        console.log('=== REFRESH USER SUCCESS ===')
         return
       }
 
@@ -84,20 +90,30 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         }),
       })
 
+      console.log('Sync user API response status:', response.status) // 🔍 增强调试
+
       if (response.ok) {
         const { user: syncedUser } = await response.json()
+        console.log('Sync user API response:', syncedUser) // 🔍 增强调试
         if (syncedUser) {
           console.log('User synced into DB:', syncedUser)
           setUser(syncedUser as User)
           setCredits(syncedUser.credits)
           localStorage.setItem('app_user', JSON.stringify(syncedUser)) // ✅ 使用 app_user 更新缓存
+          setLoading(false)
+          console.log('=== REFRESH USER SUCCESS (SYNCED) ===')
+          return
         }
+      } else {
+        const errorText = await response.text()
+        console.error('Sync user API failed:', response.status, errorText)
       }
     } catch (err) {
       console.error('Error refreshing user:', err)
-      // 🚩 不要清空user，保持当前状态
-    } finally {
+      // 🚩 不要清空user，保持当前状态，但要设置loading=false
       setLoading(false)
+    } finally {
+      // 确保loading状态被正确设置
       console.log('=== REFRESH USER END ===')
     }
   }
