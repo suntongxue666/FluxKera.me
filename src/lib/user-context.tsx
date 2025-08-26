@@ -120,7 +120,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async () => {
     try {
-      console.log('Starting Google OAuth login...')
+      console.log('=== SIGN IN START ===')
+      console.log('Current URL:', window.location.href)
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -134,6 +135,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           skipBrowserRedirect: false
         }
       })
+      
+      console.log('OAuth response:', { data, error })
       
       if (error) {
         console.error('Google OAuth error:', error)
@@ -165,6 +168,23 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // 监听认证状态变化
   useEffect(() => {
     console.log('=== USER PROVIDER MOUNTED ===')
+
+    // 检查URL参数是否有认证成功标记
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const authSuccess = urlParams.get('auth')
+      const authError = urlParams.get('error')
+      
+      if (authSuccess === 'success') {
+        console.log('Auth success detected in URL, will refresh user data')
+        // 清除URL参数
+        const newUrl = new URL(window.location.href)
+        newUrl.searchParams.delete('auth')
+        window.history.replaceState({}, '', newUrl.toString())
+      } else if (authError) {
+        console.error('Auth error detected in URL:', authError, urlParams.get('message'))
+      }
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
