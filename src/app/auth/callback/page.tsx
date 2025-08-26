@@ -28,52 +28,18 @@ function AuthCallbackContent() {
         return
       }
 
-      console.log('Authorization code received, processing...')
+      console.log('Authorization code received, letting UserProvider handle auth state...')
       
-      try {
-        // 对于新版本的Supabase，需要传入完整的URL
-        console.log('Attempting to exchange code for session...')
-        console.log('Current URL:', window.location.href)
-        
-        // 添加超时机制
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Exchange timeout')), 10000)
-        )
-        
-        const exchangePromise = supabase.auth.exchangeCodeForSession(window.location.href)
-        
-        const { data, error: sessionError } = await Promise.race([exchangePromise, timeoutPromise])
-        console.log('Exchange result:', { data: data?.session?.user?.email, error: sessionError })
-        
-        if (sessionError) {
-          console.error('Error exchanging code for session:', sessionError)
-          router.push(`/?error=auth_failed&message=${encodeURIComponent(sessionError.message)}`)
-          return
-        }
-
-        if (data.session) {
-          console.log('Session created successfully for user:', data.session.user.email)
-          console.log('About to redirect to /?auth=success')
-          // 清除URL参数并重定向到首页
-          router.replace('/?auth=success')
-        } else {
-          console.error('No session created')
-          router.push('/?error=no_session')
-        }
-      } catch (err) {
-        console.error('Unexpected error during auth callback:', err)
-        console.error('Error details:', err)
-        
-        if (err.message === 'Exchange timeout') {
-          router.push('/?error=timeout&message=Authentication timeout')
-        } else {
-          router.push('/?error=unexpected_error')
-        }
-      }
+      // 不再在这里处理exchangeCodeForSession，让Supabase自动处理
+      // 直接重定向到首页，UserProvider会监听认证状态变化
+      setTimeout(() => {
+        console.log('Redirecting to home, UserProvider will handle auth state')
+        router.replace('/')
+      }, 1000) // 给Supabase一点时间处理
     }
 
     handleCallback()
-  }, [router, searchParams, supabase.auth])
+  }, [router, searchParams])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
