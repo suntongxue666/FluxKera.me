@@ -78,6 +78,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         return
       }
 
+      if (error) {
+        console.error('DB query error:', error.message, error.code)
+      }
+
       console.warn('User not found in DB, syncing...')
       const response = await fetch('/api/sync-user', {
         method: 'POST',

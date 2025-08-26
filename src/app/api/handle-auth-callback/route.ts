@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
     )
 
     console.log('Exchanging code for session...')
+    // 使用完整的URL进行code exchange，这样包含了所有必要的参数
     const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(requestUrl.toString())
 
     if (exchangeError) {

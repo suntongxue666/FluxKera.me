@@ -31,20 +31,21 @@ function AuthCallbackContent() {
       console.log('Authorization code received, processing...')
       
       try {
-        // 使用getSessionFromUrl自动解析URL并保存session
-        const { data, error: sessionError } = await supabase.auth.getSessionFromUrl({ storeSession: true })
+        // 对于新版本的Supabase，直接使用exchangeCodeForSession
+        const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(code)
         
         if (sessionError) {
-          console.error('Error getting session from URL:', sessionError)
+          console.error('Error exchanging code for session:', sessionError)
           router.push(`/?error=auth_failed&message=${encodeURIComponent(sessionError.message)}`)
           return
         }
 
         if (data.session) {
-          console.log('Session stored successfully for user:', data.session.user.email)
-          router.push('/?auth=success')
+          console.log('Session created successfully for user:', data.session.user.email)
+          // 清除URL参数并重定向到首页
+          router.replace('/?auth=success')
         } else {
-          console.error('No session found in URL')
+          console.error('No session created')
           router.push('/?error=no_session')
         }
       } catch (err) {
