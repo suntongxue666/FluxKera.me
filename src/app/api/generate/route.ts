@@ -131,16 +131,49 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single()
       
+    let finalUser = dbUser
+    
     if (userError || !dbUser) {
-      console.error('User fetch error:', userError)
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 404 }
-      )
+      console.log('User not found in database, creating new user...', userError?.code)
+      
+      // 如果用户不存在，创建新用户（类似user-context中的逻辑）
+      if (userError?.code === 'PGRST116') {
+        const { data: newUser, error: createError } = await supabaseServer
+          .from('users')
+          .insert({
+            id: user.id,
+            email: user.email,
+            google_id: user.user_metadata?.sub || user.id,
+            credits: 20, // 新用户获得20积分
+            avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select('*')
+          .single()
+          
+        if (createError) {
+          console.error('Failed to create user:', createError)
+          return NextResponse.json(
+            { success: false, error: 'Failed to create user account' },
+            { status: 500 }
+          )
+        }
+        
+        finalUser = newUser
+        console.log('New user created successfully:', newUser.id)
+      } else {
+        // 其他数据库错误
+        console.error('Database error:', userError)
+        return NextResponse.json(
+          { success: false, error: 'Database error' },
+          { status: 500 }
+        )
+      }
     }
     
     // 检查用户积分
-    if (dbUser.credits < 10) {
+    if (finalUser.credits < 10) {
       return NextResponse.json(
         { success: false, error: 'Insufficient credits' },
         { status: 402 }
@@ -187,7 +220,7 @@ export async function POST(request: NextRequest) {
     const { error: creditError } = await supabaseServer
       .from('users')
       .update({ 
-        credits: dbUser.credits - 10,
+        credits: finalUser.credits - 10,
         updated_at: new Date().toISOString()
       })
       .eq('id', user.id)
@@ -220,7 +253,7 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single()
       
-    const creditsRemaining = updatedUser && !updatedUserError ? updatedUser.credits : dbUser.credits - 10
+    const creditsRemaining = updatedUser && !updatedUserError ? updatedUser.credits : finalUser.credits - 10
 
     return NextResponse.json({
       success: true,
