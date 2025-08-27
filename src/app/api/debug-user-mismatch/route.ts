@@ -9,6 +9,10 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_SECRET!
 )
 
+export async function GET(request: NextRequest) {
+  return POST(request)
+}
+
 export async function POST(request: NextRequest) {
   try {
     console.log('=== DEBUG USER MISMATCH ===')
