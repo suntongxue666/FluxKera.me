@@ -39,6 +39,15 @@ export default function CustomSubscriptionButton({
     try {
       // 1. 创建订阅
       setProcessingStatus('creating')
+      
+      console.log('🔥 创建订阅请求参数:', {
+        planName,
+        price,
+        credits,
+        userId: user.id,
+        userEmail: user.email
+      })
+      
       const createResponse = await fetch('/api/paypal/create-subscription', {
         method: 'POST',
         headers: {

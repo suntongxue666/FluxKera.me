@@ -113,19 +113,46 @@ export async function POST(request: NextRequest) {
       let creditsToAdd = 0
       let planName = 'Pro' // 默认
       
-      // 从PayPal订阅信息中获取计划名称
-      if (paypalSubscription.plan_id) {
-        // 这里可以根据plan_id判断是Pro还是Max
-        // 暂时根据金额判断
-        const amount = paypalSubscription.billing_info?.last_payment?.amount?.value
-        if (amount === '29.9' || amount === '29.90') {
+      // 从数据库获取已存储的计划信息（优先使用）
+      if (user.subscription_plan && ['Pro', 'Max'].includes(user.subscription_plan)) {
+        planName = user.subscription_plan
+      } else {
+        // 如果数据库没有计划信息，根据PayPal信息判断
+        console.log('No plan in database, determining from PayPal data...')
+        
+        // 尝试多个PayPal字段获取金额信息
+        const amount = paypalSubscription.billing_info?.last_payment?.amount?.value ||
+                      paypalSubscription.billing_info?.outstanding_balance?.value ||
+                      paypalSubscription.plan?.pricing_scheme?.fixed_price?.value
+                      
+        console.log('PayPal amount detected:', amount)
+        console.log('PayPal subscription data:', JSON.stringify(paypalSubscription, null, 2))
+        
+        // 将金额转换为数字进行比较，避免字符串比较问题
+        const numAmount = parseFloat(amount || '0')
+        
+        if (numAmount >= 25) { // 29.9的范围
           planName = 'Max'
           creditsToAdd = 5000
+        } else if (numAmount >= 5) { // 9.9的范围  
+          planName = 'Pro'
+          creditsToAdd = 1000
         } else {
+          // 默认Pro计划
+          console.warn('Could not determine plan from amount:', amount, 'defaulting to Pro')
           planName = 'Pro'
           creditsToAdd = 1000
         }
       }
+      
+      // 根据计划名称设置积分
+      if (planName === 'Max') {
+        creditsToAdd = 5000
+      } else if (planName === 'Pro') {
+        creditsToAdd = 1000
+      }
+      
+      console.log('Final plan determination:', { planName, creditsToAdd })
 
       // 更新用户订阅信息和积分
       const { error: updateError } = await supabase

@@ -64,8 +64,15 @@ export async function POST(request: NextRequest) {
     )
     
     // 检查用户是否已登录
+    console.log('=== GENERATE API AUTH DEBUG ===')
     console.log('Checking user session...')
-    console.log('Available cookies:', cookieStore.getAll().map(c => c.name))
+    
+    const allCookies = cookieStore.getAll()
+    console.log('Available cookies:', allCookies.map(c => ({ name: c.name, hasValue: !!c.value, valueLength: c.value?.length || 0 })))
+    
+    // 特别检查Supabase相关的cookies
+    const supabaseCookies = allCookies.filter(c => c.name.includes('supabase') || c.name.includes('sb-'))
+    console.log('Supabase cookies:', supabaseCookies.map(c => ({ name: c.name, hasValue: !!c.value })))
     
     const { data: { session }, error: sessionError } = await supabaseServer.auth.getSession()
     
@@ -73,7 +80,9 @@ export async function POST(request: NextRequest) {
       hasSession: !!session, 
       hasUser: !!session?.user,
       userId: session?.user?.id,
-      error: sessionError 
+      userEmail: session?.user?.email,
+      error: sessionError?.message || null,
+      sessionKeys: session ? Object.keys(session) : []
     })
     
     if (sessionError) {

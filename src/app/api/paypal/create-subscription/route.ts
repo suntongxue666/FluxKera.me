@@ -227,6 +227,8 @@ export async function POST(request: NextRequest) {
           userId,
           subscriptionId: subscription.id,
           planName,
+          price,
+          credits,
           userEmail
         })
 
@@ -234,7 +236,7 @@ export async function POST(request: NextRequest) {
           .from('users')
           .update({
             subscription_id: subscription.id,
-            subscription_plan: planName,
+            subscription_plan: planName, // 确保planName正确传递
             subscription_status: 'pending',
             updated_at: new Date().toISOString()
           })
@@ -244,7 +246,7 @@ export async function POST(request: NextRequest) {
           console.error('Failed to save subscription to database:', updateError)
           // 不抛出错误，因为订阅已经创建成功
         } else {
-          console.log('Subscription saved to database successfully')
+          console.log('Subscription saved to database successfully with plan:', planName)
         }
       } catch (dbError) {
         console.error('Database error:', dbError)
