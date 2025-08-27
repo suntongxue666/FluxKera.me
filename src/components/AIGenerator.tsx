@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Wand2, Settings, Loader2, Download, RefreshCw, AlertCircle, LogIn } from 'lucide-react'
 import { useUser } from '@/lib/user-context'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 // Based on open-source project recommended settings
 const FLUX_KREA_SETTINGS = {
@@ -128,11 +129,25 @@ export default function AIGenerator() {
     setIsGenerating(true)
     try {
       console.log('Sending generation request...')
+      
+      // 获取当前用户session以获取access_token
+      const { data: { session } } = await createClientComponentClient().auth.getSession()
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      }
+      
+      // 如果有session，添加Authorization header
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`
+        console.log('🔥 Added Authorization header with access token')
+      } else {
+        console.warn('⚠️ No access token found, using credentials only')
+      }
+      
       const response = await fetch('/api/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         credentials: 'include', // 🔥 包含cookies以传递认证信息
         body: JSON.stringify({
           prompt: prompt.trim(),

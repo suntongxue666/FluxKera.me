@@ -43,7 +43,20 @@ export async function POST(request: NextRequest) {
     // 标准化参数
     const normalizedParams = normalizeParams(params)
 
-    // 用户认证和积分检查
+    // 用户认证和积分检查 - 双重认证方案
+    console.log('=== GENERATE API AUTH DEBUG ===')
+    
+    // 1. 尝试从Authorization header获取token
+    const authHeader = request.headers.get('authorization')
+    const accessToken = authHeader?.replace('Bearer ', '')
+    
+    console.log('Auth header present:', !!authHeader)
+    console.log('Access token present:', !!accessToken)
+    
+    let user = null
+    let authMethod = ''
+    
+    // Create Supabase client
     const cookieStore = cookies()
     const supabaseServer = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -63,54 +76,62 @@ export async function POST(request: NextRequest) {
       }
     )
     
-    // 检查用户是否已登录
-    console.log('=== GENERATE API AUTH DEBUG ===')
-    console.log('Checking user session...')
-    
-    const allCookies = cookieStore.getAll()
-    console.log('Available cookies:', allCookies.map(c => ({ name: c.name, hasValue: !!c.value, valueLength: c.value?.length || 0 })))
-    
-    // 特别检查Supabase相关的cookies
-    const supabaseCookies = allCookies.filter(c => c.name.includes('supabase') || c.name.includes('sb-'))
-    console.log('Supabase cookies:', supabaseCookies.map(c => ({ name: c.name, hasValue: !!c.value })))
-    
-    const { data: { session }, error: sessionError } = await supabaseServer.auth.getSession()
-    
-    console.log('Session check result:', { 
-      hasSession: !!session, 
-      hasUser: !!session?.user,
-      userId: session?.user?.id,
-      userEmail: session?.user?.email,
-      error: sessionError?.message || null,
-      sessionKeys: session ? Object.keys(session) : []
-    })
-    
-    if (sessionError) {
-      console.error('Session error:', sessionError)
-      return NextResponse.json(
-        { success: false, error: 'Authentication error', details: sessionError.message },
-        { status: 500 }
-      )
+    // 2. 如果有access_token，优先使用token认证
+    if (accessToken) {
+      console.log('Attempting token authentication...')
+      try {
+        const { data: { user: tokenUser }, error: tokenError } = await supabaseServer.auth.getUser(accessToken)
+        if (tokenError) {
+          console.log('Token auth failed:', tokenError.message)
+        } else if (tokenUser) {
+          user = tokenUser
+          authMethod = 'token'
+          console.log('Token authentication successful:', user.id)
+        }
+      } catch (tokenErr) {
+        console.log('Token auth error:', tokenErr)
+      }
     }
     
-    if (!session) {
-      console.log('No session found, user not authenticated')
+    // 3. 如果token认证失败，fallback到cookie认证
+    if (!user) {
+      console.log('Attempting cookie authentication...')
+      try {
+        const { data: { session }, error: sessionError } = await supabaseServer.auth.getSession()
+        
+        if (sessionError) {
+          console.log('Cookie auth error:', sessionError.message)
+        } else if (session?.user) {
+          user = session.user
+          authMethod = 'cookie'
+          console.log('Cookie authentication successful:', user.id)
+        } else {
+          console.log('No session found in cookies')
+        }
+      } catch (cookieErr) {
+        console.log('Cookie auth error:', cookieErr)
+      }
+    }
+    
+    // 4. 认证失败
+    if (!user) {
+      console.log('Authentication failed - no valid user found')
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
         { status: 401 }
       )
     }
     
-    console.log('User authenticated:', session.user.id)
+    console.log(`User authenticated via ${authMethod}:`, user.id)
     
     // 获取用户信息
-    const { data: user, error: userError } = await supabaseServer
+    const { data: dbUser, error: userError } = await supabaseServer
       .from('users')
       .select('*')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single()
       
-    if (userError || !user) {
+    if (userError || !dbUser) {
       console.error('User fetch error:', userError)
       return NextResponse.json(
         { success: false, error: 'User not found' },
@@ -119,7 +140,7 @@ export async function POST(request: NextRequest) {
     }
     
     // 检查用户积分
-    if (user.credits < 10) {
+    if (dbUser.credits < 10) {
       return NextResponse.json(
         { success: false, error: 'Insufficient credits' },
         { status: 402 }
@@ -166,7 +187,7 @@ export async function POST(request: NextRequest) {
     const { error: creditError } = await supabaseServer
       .from('users')
       .update({ 
-        credits: user.credits - 10,
+        credits: dbUser.credits - 10,
         updated_at: new Date().toISOString()
       })
       .eq('id', user.id)
@@ -199,7 +220,7 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single()
       
-    const creditsRemaining = updatedUser && !updatedUserError ? updatedUser.credits : user.credits - 10
+    const creditsRemaining = updatedUser && !updatedUserError ? updatedUser.credits : dbUser.credits - 10
 
     return NextResponse.json({
       success: true,
