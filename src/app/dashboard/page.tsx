@@ -3,52 +3,47 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { User, getCurrentUser } from '@/lib/auth'
+import { useUser } from '@/lib/user-context'
 import { Coins, Image, Clock, ChevronRight, CreditCard, Download } from 'lucide-react'
+import SubscriptionStatus from '@/components/SubscriptionStatus'
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const { user, credits, loading } = useUser()
   const [generations, setGenerations] = useState<any[]>([])
   const [transactions, setTransactions] = useState<any[]>([])
   const router = useRouter()
 
   useEffect(() => {
-    async function loadUserData() {
-      try {
-        const currentUser = await getCurrentUser()
-        if (!currentUser) {
-          // 如果用户未登录，重定向到首页
-          router.push('/')
-          return
-        }
-        
-        setUser(currentUser)
-        
-        // 加载用户的生成历史
-        const genResponse = await fetch('/api/generations')
-        if (genResponse.ok) {
-          const genData = await genResponse.json()
-          setGenerations(genData.generations || [])
-        }
-        
-        // 加载用户的积分交易历史
-        const txResponse = await fetch('/api/credits')
-        if (txResponse.ok) {
-          const txData = await txResponse.json()
-          setTransactions(txData.transactions || [])
-        }
-      } catch (error) {
-        console.error('Error loading user data:', error)
-      } finally {
-        setIsLoading(false)
-      }
+    if (!loading && !user) {
+      // 如果用户未登录，重定向到首页
+      router.push('/')
+      return
     }
-    
-    loadUserData()
-  }, [router])
 
-  if (isLoading) {
+    if (user) {
+      // 加载用户的生成历史
+      fetch('/api/generations')
+        .then(response => response.json())
+        .then(data => {
+          if (data.generations) {
+            setGenerations(data.generations)
+          }
+        })
+        .catch(error => console.error('Error loading generations:', error))
+      
+      // 加载用户的积分交易历史
+      fetch('/api/credits')
+        .then(response => response.json())
+        .then(data => {
+          if (data.transactions) {
+            setTransactions(data.transactions)
+          }
+        })
+        .catch(error => console.error('Error loading transactions:', error))
+    }
+  }, [user, loading, router])
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -87,7 +82,7 @@ export default function DashboardPage() {
               <div className="bg-blue-50 px-4 py-2 rounded-lg flex items-center">
                 <Coins className="h-5 w-5 text-blue-600 mr-2" />
                 <div>
-                  <div className="text-2xl font-bold text-blue-700">{user?.credits}</div>
+                  <div className="text-2xl font-bold text-blue-700">{credits}</div>
                   <div className="text-xs text-blue-600">可用积分</div>
                 </div>
               </div>
@@ -147,6 +142,11 @@ export default function DashboardPage() {
               您的账户注册日期
             </p>
           </div>
+        </div>
+
+        {/* 订阅状态组件 */}
+        <div className="mb-8">
+          <SubscriptionStatus />
         </div>
 
         {/* 生成历史 */}

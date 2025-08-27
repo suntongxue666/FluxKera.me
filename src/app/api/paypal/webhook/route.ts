@@ -81,12 +81,17 @@ async function handleSubscriptionActivated(eventData: any) {
     }
 
     if (creditsToAdd > 0) {
+      // 计算订阅有效期（默认1个月）
+      const expiresAt = new Date()
+      expiresAt.setMonth(expiresAt.getMonth() + 1)
+      
       // 更新用户积分和状态
       const { error: updateError } = await supabase
         .from('users')
         .update({
           credits: (user.credits || 0) + creditsToAdd,
           subscription_status: 'active',
+          subscription_expires_at: expiresAt.toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id)
@@ -147,11 +152,16 @@ async function handleSubscriptionPaymentSuccess(eventData: any) {
     }
 
     if (creditsToAdd > 0) {
+      // 计算订阅续费有效期（延长1个月）
+      const expiresAt = new Date()
+      expiresAt.setMonth(expiresAt.getMonth() + 1)
+      
       // 更新用户积分
       const { error: updateError } = await supabase
         .from('users')
         .update({
           credits: (user.credits || 0) + creditsToAdd,
+          subscription_expires_at: expiresAt.toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id)

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Wand2, Settings, Loader2, Download, RefreshCw, AlertCircle, LogIn } from 'lucide-react'
 import { useUser } from '@/lib/user-context'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import LowCreditsModal from './LowCreditsModal'
 
 // Based on open-source project recommended settings
 const FLUX_KREA_SETTINGS = {
@@ -42,6 +43,7 @@ export default function AIGenerator() {
     seed: Math.floor(Math.random() * 1000000)
   })
   const [showLoginModal, setShowLoginModal] = useState(false)
+  const [showLowCreditsModal, setShowLowCreditsModal] = useState(false)
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null)
   const [countdownInterval, setCountdownInterval] = useState<NodeJS.Timeout | null>(null)
   
@@ -98,30 +100,7 @@ export default function AIGenerator() {
     
     // 检查用户积分是否足够
     if (credits < 10) {
-      setError('Insufficient credits. Please recharge to continue.')
-      setRedirectCountdown(3)
-      
-      // 清理之前的倒计时
-      if (countdownInterval) {
-        clearInterval(countdownInterval)
-      }
-      
-      // 开始倒计时
-      const newCountdownInterval = setInterval(() => {
-        setRedirectCountdown(prev => {
-          if (prev === null || prev <= 1) {
-            clearInterval(newCountdownInterval)
-            setCountdownInterval(null)
-            // 跳转到Pricing页面
-            window.location.href = 'https://www.fluxkrea.me/pricing'
-            return null
-          }
-          return prev - 1
-        })
-      }, 1000)
-      
-      setCountdownInterval(newCountdownInterval)
-      
+      setShowLowCreditsModal(true)
       return
     }
     
@@ -439,6 +418,13 @@ export default function AIGenerator() {
           </div>
         </div>
       )}
+
+      {/* 低积分模态框 */}
+      <LowCreditsModal
+        isOpen={showLowCreditsModal}
+        onClose={() => setShowLowCreditsModal(false)}
+        credits={credits}
+      />
     </div>
   )
 }
