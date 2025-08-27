@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateImage, validateParams, normalizeParams, getEstimatedTime } from '@/lib/replicate'
-import { supabase } from '@/lib/supabase'
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createClient } from '@supabase/supabase-js'
 
 // 强制动态渲染
 export const dynamic = 'force-dynamic'
+
+// 使用服务端密钥创建Supabase客户端
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_SECRET!
+)
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,89 +47,38 @@ export async function POST(request: NextRequest) {
     // 标准化参数
     const normalizedParams = normalizeParams(params)
 
-    // 用户认证和积分检查 - 双重认证方案
-    console.log('=== GENERATE API AUTH DEBUG ===')
+    // 用户认证 - 仅使用token认证
+    console.log('=== GENERATE API AUTH (TOKEN ONLY) ===')
     
-    // 1. 尝试从Authorization header获取token
     const authHeader = request.headers.get('authorization')
     const accessToken = authHeader?.replace('Bearer ', '')
     
     console.log('Auth header present:', !!authHeader)
     console.log('Access token present:', !!accessToken)
     
-    let user = null
-    let authMethod = ''
-    
-    // Create Supabase client
-    const cookieStore = cookies()
-    const supabaseServer = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name: string, options: CookieOptions) {
-            cookieStore.delete({ name, ...options })
-          },
-        },
-      }
-    )
-    
-    // 2. 如果有access_token，优先使用token认证
-    if (accessToken) {
-      console.log('Attempting token authentication...')
-      try {
-        const { data: { user: tokenUser }, error: tokenError } = await supabaseServer.auth.getUser(accessToken)
-        if (tokenError) {
-          console.log('Token auth failed:', tokenError.message)
-        } else if (tokenUser) {
-          user = tokenUser
-          authMethod = 'token'
-          console.log('Token authentication successful:', user.id)
-        }
-      } catch (tokenErr) {
-        console.log('Token auth error:', tokenErr)
-      }
-    }
-    
-    // 3. 如果token认证失败，fallback到cookie认证
-    if (!user) {
-      console.log('Attempting cookie authentication...')
-      try {
-        const { data: { session }, error: sessionError } = await supabaseServer.auth.getSession()
-        
-        if (sessionError) {
-          console.log('Cookie auth error:', sessionError.message)
-        } else if (session?.user) {
-          user = session.user
-          authMethod = 'cookie'
-          console.log('Cookie authentication successful:', user.id)
-        } else {
-          console.log('No session found in cookies')
-        }
-      } catch (cookieErr) {
-        console.log('Cookie auth error:', cookieErr)
-      }
-    }
-    
-    // 4. 认证失败
-    if (!user) {
-      console.log('Authentication failed - no valid user found')
+    if (!accessToken) {
+      console.log('No access token provided')
       return NextResponse.json(
-        { success: false, error: 'Authentication required' },
+        { success: false, error: 'Authentication required - please provide access token' },
         { status: 401 }
       )
     }
     
-    console.log(`User authenticated via ${authMethod}:`, user.id)
+    // 使用服务端客户端验证token
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(accessToken)
+    
+    if (authError || !user) {
+      console.error('Token authentication failed:', authError?.message)
+      return NextResponse.json(
+        { success: false, error: 'Invalid authentication token' },
+        { status: 401 }
+      )
+    }
+    
+    console.log('User authenticated via token:', user.id, user.email)
     
     // 获取用户信息
-    const { data: dbUser, error: userError } = await supabaseServer
+    const { data: dbUser, error: userError } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('id', user.id)
@@ -136,9 +89,9 @@ export async function POST(request: NextRequest) {
     if (userError || !dbUser) {
       console.log('User not found in database, creating new user...', userError?.code)
       
-      // 如果用户不存在，创建新用户（类似user-context中的逻辑）
+      // 如果用户不存在，创建新用户
       if (userError?.code === 'PGRST116') {
-        const { data: newUser, error: createError } = await supabaseServer
+        const { data: newUser, error: createError } = await supabaseAdmin
           .from('users')
           .insert({
             id: user.id,
@@ -202,7 +155,7 @@ export async function POST(request: NextRequest) {
     console.log(`Image generated in ${generationTime}ms`)
 
     // 保存生成记录
-    const { error: saveError } = await supabaseServer
+    const { error: saveError } = await supabaseAdmin
       .from('generations')
       .insert({
         user_id: user.id,
@@ -217,7 +170,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 扣除用户积分
-    const { error: creditError } = await supabaseServer
+    const { error: creditError } = await supabaseAdmin
       .from('users')
       .update({ 
         credits: finalUser.credits - 10,
@@ -232,7 +185,7 @@ export async function POST(request: NextRequest) {
     }
     
     // 记录积分交易
-    const { error: transactionError } = await supabaseServer
+    const { error: transactionError } = await supabaseAdmin
       .from('credit_transactions')
       .insert({
         user_id: user.id,
@@ -247,7 +200,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 再次获取用户信息以确保返回最新的积分
-    const { data: updatedUser, error: updatedUserError } = await supabaseServer
+    const { data: updatedUser, error: updatedUserError } = await supabaseAdmin
       .from('users')
       .select('credits')
       .eq('id', user.id)
