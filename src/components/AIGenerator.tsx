@@ -133,6 +133,7 @@ export default function AIGenerator() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // 🔥 包含cookies以传递认证信息
         body: JSON.stringify({
           prompt: prompt.trim(),
           width: settings.width,
@@ -140,8 +141,7 @@ export default function AIGenerator() {
           guidance: settings.guidance,
           num_steps: settings.num_steps,
           seed: settings.seed
-        }),
-        credentials: 'include' // 确保包含认证cookies
+        })
       })
       
       console.log('Response status:', response.status)
