@@ -128,10 +128,19 @@ export default function AIGenerator() {
     setError(null)
     setIsGenerating(true)
     try {
+      console.log('=== AI GENERATOR DEBUG ===')
       console.log('Sending generation request...')
       
       // 获取当前用户session以获取access_token
       const { data: { session } } = await createClientComponentClient().auth.getSession()
+      
+      console.log('Frontend session check:', {
+        hasSession: !!session,
+        hasUser: !!session?.user,
+        hasAccessToken: !!session?.access_token,
+        userId: session?.user?.id,
+        userEmail: session?.user?.email
+      })
       
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -144,6 +153,8 @@ export default function AIGenerator() {
       } else {
         console.warn('⚠️ No access token found, using credentials only')
       }
+      
+      console.log('Request headers:', headers)
       
       const response = await fetch('/api/generate', {
         method: 'POST',
