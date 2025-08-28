@@ -141,10 +141,15 @@ export default function HeaderUserMenu() {
                 <span className="text-yellow-400 font-semibold">{credits}</span>
               </div>
 
-              {/* Valid信息 */}
+              {/* Expires_at信息 */}
               <div className="flex items-center justify-between mb-4">
-                <span className="text-white text-sm">Valid</span>
-                <span className="text-green-400 text-sm">∞</span>
+                <span className="text-white text-sm">Expires_at</span>
+                <span className="text-green-400 text-sm">
+                  {user?.subscription_expires_at 
+                    ? new Date(user.subscription_expires_at).toLocaleDateString()
+                    : '∞'
+                  }
+                </span>
               </div>
 
               {/* 分割线 */}

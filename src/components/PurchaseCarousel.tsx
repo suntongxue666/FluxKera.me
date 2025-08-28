@@ -47,21 +47,22 @@ const mockUsers: User[] = [
   { id: 30, username: 'christina.nelson@gmail.com', avatar: 'https://images.unsplash.com/photo-1513956589380-bad6acb9b9d4?w=32&h=32&fit=crop&crop=face&auto=format' }
 ]
 
-const generateRandomPurchaseActivity = (): PurchaseActivity => {
+const generateRandomPurchaseActivity = (index: number): PurchaseActivity => {
   const randomUser = mockUsers[Math.floor(Math.random() * mockUsers.length)]
   
   // Pro占70%，Max占30%
   const isPro = Math.random() < 0.7
   const plan = isPro ? 'Pro' : 'Max'
   
-  // 生成随机时间：1分钟到24小时前
-  const randomMinutes = Math.floor(Math.random() * (24 * 60)) + 1
+  // 生成固定的时间序列：第一条是分钟，后面按小时递增
   let timeAgo: string
-  
-  if (randomMinutes < 60) {
-    timeAgo = `${randomMinutes} mins ago`
+  if (index === 0) {
+    // 第一条：随机分钟数（5-59分钟前）
+    const minutes = Math.floor(Math.random() * 55) + 5
+    timeAgo = `${minutes} mins ago`
   } else {
-    const hours = Math.floor(randomMinutes / 60)
+    // 后续条目：按小时递增（1-11小时前）
+    const hours = Math.min(index, 11)
     timeAgo = `${hours} hour${hours > 1 ? 's' : ''} ago`
   }
   
@@ -81,46 +82,41 @@ const maskUsername = (username: string): string => {
 export default function PurchaseCarousel() {
   const [activities, setActivities] = useState<PurchaseActivity[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
     // 生成10个不同的购买活动
     const generateActivities = () => {
       const newActivities: PurchaseActivity[] = []
       const usedUserIds = new Set<number>()
+      let index = 0
       
-      while (newActivities.length < 10) {
-        const activity = generateRandomPurchaseActivity()
+      while (newActivities.length < 10 && index < 100) { // 防止无限循环
+        const activity = generateRandomPurchaseActivity(index)
         // 确保每个用户只出现一次
         if (!usedUserIds.has(activity.user.id)) {
           usedUserIds.add(activity.user.id)
           newActivities.push(activity)
         }
+        index++
       }
       
       return newActivities
     }
 
     setActivities(generateActivities())
-    setIsVisible(true)
   }, [])
 
   useEffect(() => {
     if (activities.length === 0) return
 
     const interval = setInterval(() => {
-      setIsVisible(false)
-      
-      setTimeout(() => {
-        setCurrentIndex((prevIndex) => (prevIndex + 1) % activities.length)
-        setIsVisible(true)
-      }, 500) // 淡出淡入过渡时间
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % activities.length)
     }, 10000) // 每10秒切换
 
     return () => clearInterval(interval)
   }, [activities.length])
 
-  if (activities.length === 0 || !isVisible) {
+  if (activities.length === 0) {
     return null
   }
 
@@ -128,14 +124,14 @@ export default function PurchaseCarousel() {
 
   return (
     <div className="flex justify-center mb-12">
-      <div className={`bg-white/90 backdrop-blur-sm rounded-lg px-4 py-3 shadow-lg border border-gray-200 transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
-        <div className="flex items-center space-x-3">
+      <div className="bg-white/90 backdrop-blur-sm rounded-lg px-4 py-3 shadow-lg border border-gray-200">
+        <div className="flex items-center space-x-3 transition-all duration-500">
           <img 
             src={currentActivity.user.avatar} 
             alt="User avatar" 
-            className="w-8 h-8 rounded-full"
+            className="w-8 h-8 rounded-full transition-all duration-500"
           />
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 transition-all duration-500">
             <span className="text-sm font-medium text-gray-900">
               {maskUsername(currentActivity.user.username)}
             </span>
