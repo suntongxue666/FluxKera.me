@@ -4,6 +4,7 @@ import { Check, Star } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useUser } from '@/lib/user-context'
 import CustomSubscriptionButton from '@/components/CustomSubscriptionButton'
+import PurchaseCarousel from '@/components/PurchaseCarousel'
 
 
 const plans = [
@@ -87,6 +88,9 @@ export default function PricingPage() {
             Choose and Start creating amazing AI images today with our flexible credit packages.
           </p>
         </div>
+
+        {/* Purchase Activity Carousel */}
+        <PurchaseCarousel />
 
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">

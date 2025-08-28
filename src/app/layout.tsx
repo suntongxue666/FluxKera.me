@@ -11,7 +11,23 @@ export const metadata: Metadata = {
   title: 'FluxKrea - AI Image Generator',
   description: 'Create stunning images with FLUX.1 Krea AI model',
   icons: {
-    icon: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/webstie-icon/FluxKrea%20log-120.png',
+    icon: [
+      {
+        url: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/webstie-icon/FluxKrea%20log-120.png',
+        sizes: '120x120',
+        type: 'image/png',
+      },
+      {
+        url: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/webstie-icon/FluxKrea%20log-120.png',
+        sizes: '32x32',
+        type: 'image/png',
+      },
+      {
+        url: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/webstie-icon/FluxKrea%20log-120.png',
+        sizes: '16x16',
+        type: 'image/png',
+      }
+    ],
     shortcut: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/webstie-icon/FluxKrea%20log-120.png',
     apple: 'https://ciwjjfcuhubjydajazkk.supabase.co/storage/v1/object/public/webstie-icon/FluxKrea%20log-120.png',
   },
