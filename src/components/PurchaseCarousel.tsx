@@ -48,8 +48,7 @@ const mockUsers: User[] = [
 ]
 
 const generateRandomPurchaseActivity = (): PurchaseActivity => {
-  const randomUsers = mockUsers.sort(() => 0.5 - Math.random()).slice(0, 10)
-  const randomUser = randomUsers[Math.floor(Math.random() * randomUsers.length)]
+  const randomUser = mockUsers[Math.floor(Math.random() * mockUsers.length)]
   
   // Pro占70%，Max占30%
   const isPro = Math.random() < 0.7
@@ -80,33 +79,52 @@ const maskUsername = (username: string): string => {
 }
 
 export default function PurchaseCarousel() {
-  const [currentActivity, setCurrentActivity] = useState<PurchaseActivity | null>(null)
+  const [activities, setActivities] = useState<PurchaseActivity[]>([])
+  const [currentIndex, setCurrentIndex] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
-    const showActivity = () => {
-      const activity = generateRandomPurchaseActivity()
-      setCurrentActivity(activity)
-      setIsVisible(true)
+    // 生成10个不同的购买活动
+    const generateActivities = () => {
+      const newActivities: PurchaseActivity[] = []
+      const usedUserIds = new Set<number>()
       
-      // 5秒后隐藏
-      setTimeout(() => {
-        setIsVisible(false)
-      }, 5000)
+      while (newActivities.length < 10) {
+        const activity = generateRandomPurchaseActivity()
+        // 确保每个用户只出现一次
+        if (!usedUserIds.has(activity.user.id)) {
+          usedUserIds.add(activity.user.id)
+          newActivities.push(activity)
+        }
+      }
+      
+      return newActivities
     }
 
-    // 初始显示
-    showActivity()
-    
-    // 每5秒生成新的购买活动
-    const interval = setInterval(showActivity, 5000)
-    
-    return () => clearInterval(interval)
+    setActivities(generateActivities())
+    setIsVisible(true)
   }, [])
 
-  if (!currentActivity || !isVisible) {
+  useEffect(() => {
+    if (activities.length === 0) return
+
+    const interval = setInterval(() => {
+      setIsVisible(false)
+      
+      setTimeout(() => {
+        setCurrentIndex((prevIndex) => (prevIndex + 1) % activities.length)
+        setIsVisible(true)
+      }, 500) // 淡出淡入过渡时间
+    }, 10000) // 每10秒切换
+
+    return () => clearInterval(interval)
+  }, [activities.length])
+
+  if (activities.length === 0 || !isVisible) {
     return null
   }
+
+  const currentActivity = activities[currentIndex]
 
   return (
     <div className="flex justify-center mb-12">
